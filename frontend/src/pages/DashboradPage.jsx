@@ -3,6 +3,7 @@ import User from "../Components/User";
 import Buyer from "../Components/Buyer";
 import SidebarLayout from "../Components/Sidebar";
 import Product from "../Components/Product";
+import SalesForm from "../Components/sales/SalesForm";
 
 const Dashboard = () => {
     const [activeComponent, setActiveComponent] = useState("");
@@ -15,6 +16,8 @@ const Dashboard = () => {
                 return <Buyer />;
             case "product":
                 return <Product />;
+            case "sales":
+                return <SalesForm />;
             default:
                 return (
                     <div className="text-gray-500 text-lg h-full flex items-center justify-center">

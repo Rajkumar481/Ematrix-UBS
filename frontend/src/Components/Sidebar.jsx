@@ -1,10 +1,11 @@
 import React from "react";
 
-const SidebarLayout = ({ setActiveComponent }) => {
+const Sidebar = ({ setActiveComponent }) => {
   const buttons = [
     { label: "User Details", value: "user" },
     { label: "Buyer Details", value: "buyer" },
-     { label: "Product Details", value: "product" },
+    { label: "Product Details", value: "product" },
+    { label: "Sales Form", value: "sales" },  // ✅ Added
   ];
 
   return (
@@ -23,4 +24,4 @@ const SidebarLayout = ({ setActiveComponent }) => {
   );
 };
 
-export default SidebarLayout;
+export default Sidebar;
