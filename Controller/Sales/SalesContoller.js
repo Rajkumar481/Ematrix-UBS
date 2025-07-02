@@ -65,7 +65,15 @@ export const createSales = async (req, res) => {
 //  GET all sales records
 export const getAllSales = async (req, res) => {
   try {
-    const sales = await Sales.find().populate("purchaseId").populate("userId");
+    const sales = await Sales.find()
+      .populate({
+        path: "purchaseId",
+        select: "productName hsnCode sellingPrice gst",
+      })
+      .populate({
+        path: "userId",
+        select: "userName email phone address gst",
+      });
     res.status(200).json(sales);
   } catch (error) {
     console.error(error);

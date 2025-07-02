@@ -1,61 +1,63 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import Salescalculation from './Salescalculation';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import Salescalculation from "./Salescalculation";
 
 const SalesForm = () => {
   const [userList, setUserList] = useState([]);
   const [productList, setProductList] = useState([]);
 
   const [userForm, setUserForm] = useState({
-    userId: '',
-    username: '',
-    email: '',
-    phone: '',
-    address: ''
+    userId: "",
+    username: "",
+    email: "",
+    phone: "",
+    address: "",
   });
 
   const [orderForm, setOrderForm] = useState({
-    orderId: '',
-    billingDate: '',
-    dueDate: '',
-    modeOfPayment: 'Cash'
+    orderId: "",
+    billingDate: "",
+    dueDate: "",
+    modeOfPayment: "Cash",
   });
 
   const [productData, setProductData] = useState({
-    purchaseId: '',
-    productName: '',
-    quantity: ''
+    purchaseId: "",
+    productName: "",
+    quantity: "",
   });
 
   useEffect(() => {
-    axios.get('http://localhost:3000/user')
-      .then(res => setUserList(res.data))
-      .catch(err => console.error('Failed to load users', err));
+    axios
+      .get("http://localhost:3000/user")
+      .then((res) => setUserList(res.data))
+      .catch((err) => console.error("Failed to load users", err));
 
-    axios.get('http://localhost:3000/purchase')
-      .then(res => setProductList(res.data))
-      .catch(err => console.error('Failed to load products', err));
+    axios
+      .get("http://localhost:3000/purchase")
+      .then((res) => setProductList(res.data))
+      .catch((err) => console.error("Failed to load products", err));
   }, []);
 
-  const handleUserChange = e => {
+  const handleUserChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'username') {
-      const selected = userList.find(u => u.userName === value);
+    if (name === "username") {
+      const selected = userList.find((u) => u.userName === value);
       if (selected) {
         return setUserForm({
           userId: selected._id,
           username: selected.userName,
           email: selected.email,
           phone: selected.phone,
-          address: selected.address
+          address: selected.address,
         });
       }
     }
-    setUserForm(f => ({ ...f, [name]: value }));
+    setUserForm((f) => ({ ...f, [name]: value }));
   };
 
-  const handleOrderChange = e => {
-    setOrderForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  const handleOrderChange = (e) => {
+    setOrderForm((f) => ({ ...f, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
@@ -69,16 +71,16 @@ const SalesForm = () => {
       orderId: orderForm.orderId,
       billingDate: orderForm.billingDate,
       dueDate: orderForm.dueDate,
-      modeOfPayment: orderForm.modeOfPayment
+      modeOfPayment: orderForm.modeOfPayment,
     };
 
     try {
-      const res = await axios.post('http://localhost:3000/sales', payload);
-      console.log('Sales submission successful:', res.data);
-      alert('Sales submitted!');
+      const res = await axios.post("http://localhost:3000/sales", payload);
+      console.log("Sales submission successful:", res.data);
+      alert("Sales submitted!");
     } catch (err) {
-      console.error('Submission error:', err.response?.data || err.message);
-      alert('Sales submission failed');
+      console.error("Submission error:", err.response?.data || err.message);
+      alert("Sales submission failed");
     }
   };
 
@@ -98,7 +100,7 @@ const SalesForm = () => {
             className="w-full border p-2 rounded-md"
           />
           <datalist id="usernames">
-            {userList.map(u => (
+            {userList.map((u) => (
               <option key={u._id} value={u.userName} />
             ))}
           </datalist>
@@ -129,7 +131,10 @@ const SalesForm = () => {
         </form>
 
         {/* Order Form */}
-        <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white p-6 rounded shadow space-y-4"
+        >
           <h2 className="text-xl font-semibold">Order Details</h2>
 
           <label>Order ID:</label>

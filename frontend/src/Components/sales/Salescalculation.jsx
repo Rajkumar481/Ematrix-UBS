@@ -1,28 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 const Salescalculation = ({ onChange, onSubmit }) => {
   const [productList, setProductList] = useState([]);
   const [productRow, setProductRow] = useState({
-    productName: '',
-    hsn: '',
-    rate: '',
-    gst: '',
-    quantity: '',
-    purchaseId: ''
+    productName: "",
+    hsn: "",
+    rate: "",
+    gst: "",
+    quantity: "",
+    purchaseId: "",
   });
 
   useEffect(() => {
     axios
-      .get('http://localhost:3000/purchase')
+      .get("http://localhost:3000/purchase")
       .then((res) => setProductList(res.data))
-      .catch((err) => console.error('Error loading products:', err));
+      .catch((err) => console.error("Error loading products:", err));
   }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    if (name === 'productName') {
+    if (name === "productName") {
       const trimmedValue = value.trim().toLowerCase();
 
       const selected = productList.find(
@@ -35,34 +35,35 @@ const Salescalculation = ({ onChange, onSubmit }) => {
           hsn: selected.hsnCode,
           rate: selected.sellingPrice,
           gst: selected.gst,
-          quantity: '',
-          purchaseId: selected._id
+          quantity: "",
+          purchaseId: selected._id,
         };
         setProductRow(updated);
         onChange({
           purchaseId: selected._id,
           productName: selected.productName,
-          quantity: ''
+          quantity: "",
         });
         return;
       } else {
-        console.warn('No matching product found for:', value);
+        console.warn("No matching product found for:", value);
       }
     }
 
     const updatedRow = { ...productRow, [name]: value };
     setProductRow(updatedRow);
 
-    if (name === 'quantity') {
+    if (name === "quantity") {
       onChange({
         purchaseId: productRow.purchaseId,
         productName: productRow.productName,
-        quantity: value
+        quantity: value,
       });
     }
   };
 
-  const gstAmount = (productRow.rate * productRow.quantity * productRow.gst) / 100 || 0;
+  const gstAmount =
+    (productRow.rate * productRow.quantity * productRow.gst) / 100 || 0;
   const total = productRow.rate * productRow.quantity || 0;
   const totalAmount = total + gstAmount;
   const profit = (totalAmount * 0.1).toFixed(2);
