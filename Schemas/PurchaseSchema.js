@@ -1,9 +1,9 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const PurchaseSchema = new mongoose.Schema({
   purchaseId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Company',
+    ref: "Company",
     required: true,
   },
   invoiceNo: String,
@@ -22,11 +22,10 @@ const PurchaseSchema = new mongoose.Schema({
   gstAmount: Number,
   total: Number,
   totalAmount: Number,
-  profit: Number
+  profit: Number,
 });
 
-
-PurchaseSchema.pre('save', function (next) {
+PurchaseSchema.pre("save", function (next) {
   const { quantity = 0, purchasePrice = 0, gst = 0, sellingPrice = 0 } = this;
 
   this.total = quantity * purchasePrice;
@@ -37,8 +36,4 @@ PurchaseSchema.pre('save', function (next) {
   next();
 });
 
-
-export default mongoose.model('Purchase', PurchaseSchema);
-
-
-
+export default mongoose.model("Purchase", PurchaseSchema);

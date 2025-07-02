@@ -1,9 +1,9 @@
 // src/components/Product.jsx
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { FaEdit, FaTrash } from 'react-icons/fa';
-import { toast } from 'react-toastify';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { FaEdit, FaTrash } from "react-icons/fa";
+import { toast } from "react-toastify";
+import { Link } from "react-router-dom";
 
 const Product = () => {
   const [userdata, setUserData] = useState([]);
@@ -14,11 +14,11 @@ const Product = () => {
 
   const fetchData = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/purchase');
+      const response = await axios.get("http://localhost:3000/purchase");
       setUserData(response.data);
     } catch (error) {
       console.error(error);
-      toast.error('Failed to fetch users');
+      toast.error("Failed to fetch users");
     }
   };
 
@@ -32,7 +32,6 @@ const Product = () => {
         >
           Add product
         </Link>
-
       </div>
 
       <table className="min-w-full table-auto border-collapse">
@@ -51,7 +50,9 @@ const Product = () => {
           {userdata.map((user, index) => (
             <tr key={user._id} className="text-center border-t">
               <td className="px-4 py-2 border">{index + 1}</td>
-              <td className="px-4 py-2 border">{user.purchaseId.companyName}</td>
+              <td className="px-4 py-2 border">
+                {user.purchaseId.companyName}
+              </td>
               <td className="px-4 py-2 border">{user.productName}</td>
               <td className="px-4 py-2 border">{user.purchaseOrderId}</td>
               <td className="px-4 py-2 border">{user.quantity}</td>
