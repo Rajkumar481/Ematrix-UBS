@@ -1,31 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Salescalculation from './Salescalculation';
 
 const SalesForm = () => {
-  // List of known users
-  const userList = [
-    {
-      username: 'joyel',
-      email: 'joyel@gmail.com',
-      phone: '8848347848',
-      address: 'kadhathur',
-    },
-    {
-      username: 'kamal',
-      email: 'kamalakannan@gmail.com',
-      phone: '8737438797',
-      address: 'gugai',
-    },
-    {
-      username: 'karan',
-      email: 'karan@gmail.com',
-      phone: '8948397595',
-      address: '5roads',
-    },
-  ];
+  const [userList, setUserList] = useState([]);
+  const [productList, setProductList] = useState([]);
 
   const [userForm, setUserForm] = useState({
+    userId: '',
     username: '',
     email: '',
     phone: '',
@@ -39,60 +21,75 @@ const SalesForm = () => {
     modeOfPayment: 'Cash'
   });
 
-  const handleUserChange = (e) => {
-    const { name, value } = e.target;
+  const [productData, setProductData] = useState({
+    purchaseId: '',
+    productName: '',
+    quantity: ''
+  });
 
+  useEffect(() => {
+    axios.get('http://localhost:3000/user')
+      .then(res => setUserList(res.data))
+      .catch(err => console.error('Failed to load users', err));
+
+    axios.get('http://localhost:3000/purchase')
+      .then(res => setProductList(res.data))
+      .catch(err => console.error('Failed to load products', err));
+  }, []);
+
+  const handleUserChange = e => {
+    const { name, value } = e.target;
     if (name === 'username') {
-      const selectedUser = userList.find(user => user.username === value);
-      if (selectedUser) {
-        setUserForm({
-          username: selectedUser.username,
-          email: selectedUser.email,
-          phone: selectedUser.phone,
-          address: selectedUser.address
+      const selected = userList.find(u => u.userName === value);
+      if (selected) {
+        return setUserForm({
+          userId: selected._id,
+          username: selected.userName,
+          email: selected.email,
+          phone: selected.phone,
+          address: selected.address
         });
-        return;
       }
     }
-
-    setUserForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setUserForm(f => ({ ...f, [name]: value }));
   };
 
-  const handleOrderChange = (e) => {
-    setOrderForm(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
+  const handleOrderChange = e => {
+    setOrderForm(f => ({ ...f, [e.target.name]: e.target.value }));
   };
 
-  const handleOrderSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const payload = {
+      userId: userForm.userId,
+      purchaseId: productData.purchaseId,
+      productName: productData.productName,
+      quantity: productData.quantity,
+      orderId: orderForm.orderId,
+      billingDate: orderForm.billingDate,
+      dueDate: orderForm.dueDate,
+      modeOfPayment: orderForm.modeOfPayment
+    };
+
     try {
-      const payload = {
-        ...orderForm,
-        ...userForm
-      };
-      const res = await axios.post('/api/order-details', payload);
-      console.log('Order details submitted:', res.data);
-      alert('Order details submitted!');
-    } catch (error) {
-      console.error('Error:', error.response?.data || error.message);
-      alert('Failed to submit order details');
+      const res = await axios.post('http://localhost:3000/sales', payload);
+      console.log('Sales submission successful:', res.data);
+      alert('Sales submitted!');
+    } catch (err) {
+      console.error('Submission error:', err.response?.data || err.message);
+      alert('Sales submission failed');
     }
   };
 
   return (
-    <div className="max-w-5xl mx-auto mt-10 grid grid-cols-1 md:grid-cols-2 gap-10">
-      
-      {/* User Details Form */}
-      <form className="bg-white p-6 rounded-lg shadow-md space-y-4">
-        <h2 className="text-xl font-semibold mb-4">User Details</h2>
-        
-        <div>
-          <label className="block mb-1">Username:</label>
+    <div className="max-w-7xl mx-auto mt-10 px-4 space-y-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        {/* User Form */}
+        <form className="bg-white p-6 rounded shadow space-y-4">
+          <h2 className="text-xl font-semibold">User Details</h2>
+
+          <label>Username:</label>
           <input
             list="usernames"
             name="username"
@@ -101,91 +98,70 @@ const SalesForm = () => {
             className="w-full border p-2 rounded-md"
           />
           <datalist id="usernames">
-            {userList.map((user, index) => (
-              <option key={index} value={user.username} />
+            {userList.map(u => (
+              <option key={u._id} value={u.userName} />
             ))}
           </datalist>
-        </div>
-        
-        <div>
-          <label className="block mb-1">Email:</label>
+
+          <label>Email:</label>
           <input
-            type="email"
             name="email"
             value={userForm.email}
             onChange={handleUserChange}
             className="w-full border p-2 rounded-md"
           />
-        </div>
-        
-        <div>
-          <label className="block mb-1">Phone Number:</label>
+
+          <label>Phone:</label>
           <input
-            type="tel"
             name="phone"
             value={userForm.phone}
             onChange={handleUserChange}
             className="w-full border p-2 rounded-md"
           />
-        </div>
-        
-        <div>
-          <label className="block mb-1">Address:</label>
+
+          <label>Address:</label>
           <input
-            type="text"
             name="address"
             value={userForm.address}
             onChange={handleUserChange}
             className="w-full border p-2 rounded-md"
           />
-        </div>
-      </form>
+        </form>
 
-      {/* Order Details Form */}
-      <form
-        onSubmit={handleOrderSubmit}
-        className="bg-white p-6 rounded-lg shadow-md space-y-4"
-      >
-        <h2 className="text-xl font-semibold mb-4">Order Details</h2>
-        
-        <div>
-          <label className="block mb-1">Order ID:</label>
+        {/* Order Form */}
+        <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow space-y-4">
+          <h2 className="text-xl font-semibold">Order Details</h2>
+
+          <label>Order ID:</label>
           <input
-            type="text"
             name="orderId"
             value={orderForm.orderId}
             onChange={handleOrderChange}
-            required
             className="w-full border p-2 rounded-md"
+            required
           />
-        </div>
-        
-        <div>
-          <label className="block mb-1">Billing Date:</label>
+
+          <label>Billing Date:</label>
           <input
             type="date"
             name="billingDate"
             value={orderForm.billingDate}
             onChange={handleOrderChange}
-            required
             className="w-full border p-2 rounded-md"
+            required
           />
-        </div>
-        
-        <div>
-          <label className="block mb-1">Due Date:</label>
+
+          <label>Due Date:</label>
           <input
             type="date"
             name="dueDate"
             value={orderForm.dueDate}
             onChange={handleOrderChange}
-            required
             className="w-full border p-2 rounded-md"
+            required
           />
-        </div>
 
-        <div>
-          <label className="block mb-1">Mode of Payment:</label>
+          <label>Mode of Payment:</label>
           <select
             name="modeOfPayment"
             value={orderForm.modeOfPayment}
@@ -195,16 +171,11 @@ const SalesForm = () => {
             <option value="Cash">Cash</option>
             <option value="Credit">Credit</option>
           </select>
-        </div>
+        </form>
+      </div>
 
-        <button
-          type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition"
-        >
-          Submit Order Details
-        </button>
-      </form>
-      <Salescalculation></Salescalculation>
+      {/* Product Entry and Final Submit */}
+      <Salescalculation onChange={setProductData} onSubmit={handleSubmit} />
     </div>
   );
 };

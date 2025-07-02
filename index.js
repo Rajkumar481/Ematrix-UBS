@@ -4,17 +4,21 @@ dotenv.config();
 import cors from "cors";
 import mongoose from "mongoose";
 // import connectDB from './db.js';
+const app = express();
+
+
+app.use(cors());
+app.use(express.json());
+
 
 //*------------Routers--------------------------
 import userRoutes from "./Routes/UserRoutes.js";
 import purchaseRoutes from "./Routes/PurchaseRoutes.js";
 import companyRoutes from "./Routes/CompanyRoutes.js";
 import salesRouter from "./Routes/SalesRouter/SalesRouter.js";
-const app = express();
+
 // connectDB();
 
-app.use(cors());
-app.use(express.json());
 
 app.use("/user", userRoutes);
 app.use("/purchase", purchaseRoutes);
