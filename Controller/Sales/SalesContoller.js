@@ -1,39 +1,49 @@
-import Sales from "../../Schemas/Sales/SalesSchema.js";
 import Purchase from "../../Schemas/PurchaseSchema.js";
+import Sales from "../../Schemas/Sales/SalesSchema.js";
 
-// CREATE a new sales record
+// CREATE a new sales record with multiple items in a single bill
 export const createSales = async (req, res) => {
   try {
     const salesArray = Array.isArray(req.body) ? req.body : [req.body];
-    const savedSalesRecords = [];
+
+    if (salesArray.length === 0) {
+      return res.status(400).json({ message: "No sales data provided" });
+    }
+
+    // Get common fields from the first item in the payload
+    const { userId, orderId, billingDate, dueDate, modeOfPayment } =
+      salesArray[0];
+
+    if (!modeOfPayment) {
+      return res.status(400).json({ message: "modeOfPayment is required" });
+    }
+    if (!["Cash", "Credit"].includes(modeOfPayment)) {
+      return res.status(400).json({ message: "Invalid modeOfPayment value" });
+    }
+
+    const items = [];
+    let grandTotal = 0;
 
     for (const salesItem of salesArray) {
-      const {
-        productName,
-        quantity,
-        userId,
-        orderId,
-        billingDate,
-        dueDate,
-        modeOfPayment,
-      } = salesItem;
+      const { productName, quantity } = salesItem;
 
-      if (!modeOfPayment) {
-        return res.status(400).json({ message: "modeOfPayment is required" });
-      }
-
-      if (!["Cash", "Credit"].includes(modeOfPayment)) {
-        return res.status(400).json({ message: "Invalid modeOfPayment value" });
-      }
+      console.log(
+        `Processing item: ${productName} - Requested qty: ${quantity}`
+      );
 
       const purchase = await Purchase.findOne({ productName });
       if (!purchase) {
+        console.error(`Product not found: ${productName}`);
         return res.status(404).json({
           message: `Product '${productName}' not found in Purchase records`,
         });
       }
 
       const qty = Number(quantity) || 0;
+
+      console.log(
+        `Checking stock for ${productName}: available=${purchase.quantity}, requested=${qty}`
+      );
 
       if (purchase.quantity < qty) {
         return res.status(400).json({
@@ -46,40 +56,47 @@ export const createSales = async (req, res) => {
       const totalAmount = total + gstAmount;
       const profit = (purchase.sellingPrice - purchase.purchasePrice) * qty;
 
+      // Update product stock
       purchase.quantity -= qty;
       await purchase.save();
 
-      const sales = new Sales({
-        userId,
+      items.push({
         purchaseId: purchase._id,
-        orderId,
-        billingDate,
-        dueDate,
+        productName,
         quantity: qty,
         gstAmount,
         total,
         totalAmount,
         profit,
-        modeOfPayment,
       });
 
-      const saved = await sales.save();
-      savedSalesRecords.push(saved);
+      grandTotal += totalAmount;
     }
 
-    res.status(201).json(savedSalesRecords);
+    const salesDoc = new Sales({
+      userId,
+      orderId,
+      billingDate,
+      dueDate,
+      modeOfPayment,
+      grandTotal,
+      items,
+    });
+
+    const savedSales = await salesDoc.save();
+    res.status(201).json(savedSales);
   } catch (error) {
     console.error("Error in createSales:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// GET all sales records with populated user and purchase info
+// GET all sales records with populated user and each item's purchase info
 export const getAllSales = async (req, res) => {
   try {
     const sales = await Sales.find()
       .populate({
-        path: "purchaseId",
+        path: "items.purchaseId",
         select: "productName hsnCode sellingPrice gst",
       })
       .populate({
@@ -97,7 +114,10 @@ export const getAllSales = async (req, res) => {
 export const getSalesById = async (req, res) => {
   try {
     const sales = await Sales.findById(req.params.id)
-      .populate("purchaseId")
+      .populate({
+        path: "items.purchaseId",
+        select: "productName hsnCode sellingPrice gst",
+      })
       .populate("userId");
     if (!sales)
       return res.status(404).json({ message: "Sales record not found" });
@@ -108,12 +128,11 @@ export const getSalesById = async (req, res) => {
   }
 };
 
-// UPDATE a sales record by ID
+// UPDATE a sales record by ID (updates top-level fields only, not items)
 export const updateSales = async (req, res) => {
   try {
     const { modeOfPayment } = req.body;
 
-    // Validate modeOfPayment if updating
     if (modeOfPayment !== undefined) {
       if (!["Cash", "Credit"].includes(modeOfPayment)) {
         return res.status(400).json({ message: "Invalid modeOfPayment value" });

@@ -26,13 +26,29 @@ export default function SalesDetails() {
       <style>
         {`
           body {
-            background-color: #e5e7eb; /* light gray background */
+            background-color: #e5e7eb;
             display: flex;
             justify-content: center;
             align-items: start;
             min-height: 100vh;
             margin: 0;
             padding: 20px;
+            font-family: "Segoe UI", Arial, sans-serif;
+            font-size: 12px;
+            color: #000;
+          }
+
+          h1, h2 {
+            font-size: 16px;
+            font-weight: bold;
+          }
+
+          strong {
+            font-weight: 600;
+          }
+
+          table, td, th {
+            font-size: 12px;
           }
 
           @media print {
@@ -57,20 +73,17 @@ export default function SalesDetails() {
       <div
         className="invoice my-4 p-6 border shadow rounded text-gray-800"
         style={{
-          width: "14.8cm", // A3 width
-          minHeight: "21cm", // A3 height
+          width: "14.8cm",
+          minHeight: "21cm",
           backgroundColor: "white",
           boxShadow: "0 0 20px rgba(0,0,0,0.1)",
         }}
       >
-        <h1 className="text-2xl font-bold text-center mb-2">Tax Invoice</h1>
+        <h1 className="text-center mb-2">Tax Invoice</h1>
 
-        {/* Invoice metadata */}
+        {/* Invoice Info */}
         <div className="flex flex-col sm:flex-row justify-between border p-4 mb-6">
           <div className="space-y-1">
-            <div>
-              <strong>Invoice No:</strong> {sale.purchaseId?.invoiceNo || "N/A"}
-            </div>
             <div>
               <strong>Order ID:</strong> {sale.orderId}
             </div>
@@ -88,29 +101,26 @@ export default function SalesDetails() {
             <div>
               <strong>Generated On:</strong> {new Date().toLocaleDateString()}
             </div>
-            <div>
-              <strong>Invoice Amount:</strong> ₹
-              {(Number(sale.totalAmount) || 0).toFixed(2)}
-            </div>
           </div>
         </div>
 
-        {/* Seller & Buyer info */}
-        <div className="grid sm:grid-cols-2 gap-6 border p-4 mb-6">
-          <div>
-            <h2 className="font-semibold text-lg mb-2">Seller Details</h2>
+        {/* Seller & Buyer Details */}
+        <div className="flex justify-between border p-4 mb-6">
+          <div className="w-1/2 pr-4">
+            <h2 className="mb-2">Seller Details</h2>
             <div>
-              <strong>Company:</strong> Your Company Pvt Ltd
+              <strong>Company:</strong> Ematix Embedded and Software Pvt Ltd
             </div>
             <div>
-              <strong>Address:</strong> Company Address Here
+              <strong>Address:</strong> Sai Towers, 201, Cherry Rd,
+              Kumarasamipatti, Salem, Tamil Nadu 636007
             </div>
             <div>
               <strong>GSTIN:</strong> 29XXXXX1234Z5A
             </div>
           </div>
-          <div>
-            <h2 className="font-semibold text-lg mb-2">Buyer Details</h2>
+          <div className="w-1/2 pl-4 text-left">
+            <h2 className="mb-2">Buyer Details</h2>
             <div>
               <strong>Name:</strong> {sale.userId?.userName}
             </div>
@@ -129,7 +139,7 @@ export default function SalesDetails() {
           </div>
         </div>
 
-        {/* Product table */}
+        {/* Product Table */}
         <div className="overflow-x-auto mb-6">
           <table className="min-w-full border text-sm">
             <thead className="bg-gray-100">
@@ -159,7 +169,7 @@ export default function SalesDetails() {
           </table>
         </div>
 
-        {/* Tax summary */}
+        {/* Tax Summary */}
         <div className="border p-4 mb-6">
           <div className="flex justify-between mb-2">
             <div>Taxable Value:</div>
@@ -175,7 +185,7 @@ export default function SalesDetails() {
           </div>
         </div>
 
-        {/* Amount in words */}
+        {/* Amount in Words */}
         <div className="italic mb-6">
           Amount Chargeable (in words):{" "}
           <strong>Rupees {numberToWords(Number(sale.totalAmount))} Only</strong>
@@ -210,7 +220,6 @@ export default function SalesDetails() {
   );
 }
 
-// Simple amount-to-words converter (limited)
 function numberToWords(amount) {
   if (isNaN(amount) || amount <= 0) return "Zero";
   const words = [
@@ -236,5 +245,5 @@ function numberToWords(amount) {
       " Hundred " +
       numberToWords(num % 100)
     ).trim();
-  return num.toString(); // fallback for large numbers
+  return num.toString();
 }

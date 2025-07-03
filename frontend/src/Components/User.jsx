@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { FaEdit, FaTrash } from 'react-icons/fa';
-import { toast } from 'react-toastify';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { FaEdit, FaTrash } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 const User = () => {
   const [userdata, setUserData] = useState([]);
@@ -10,11 +10,11 @@ const User = () => {
   const [openAddUser, setOpenAddUser] = useState(false);
 
   const [formData, setFormData] = useState({
-    userName: '',
-    email: '',
-    phone: '',
-    address: '',
-    gst: ''
+    userName: "",
+    email: "",
+    phone: "",
+    address: "",
+    gst: "",
   });
 
   useEffect(() => {
@@ -23,23 +23,23 @@ const User = () => {
 
   const fetchData = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/user');
+      const response = await axios.get("http://localhost:3000/user");
       setUserData(response.data);
     } catch (error) {
       console.error(error);
-      toast.error('Failed to fetch users');
+      toast.error("Failed to fetch users");
     }
   };
 
   const handleDelete = async (user) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
+    if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
       await axios.delete(`http://localhost:3000/user/${user._id}`);
-      toast.success('User deleted successfully');
+      toast.success("User deleted successfully");
       fetchData();
     } catch (error) {
       console.error(error);
-      toast.error('Failed to delete user');
+      toast.error("Failed to delete user");
     }
   };
 
@@ -59,27 +59,30 @@ const User = () => {
     e.preventDefault();
     try {
       if (editMode) {
-        await axios.patch(`http://localhost:3000/user/${currentUserId}`, formData);
-        toast.success('User updated successfully');
+        await axios.patch(
+          `http://localhost:3000/user/${currentUserId}`,
+          formData
+        );
+        toast.success("User updated successfully");
       } else {
-        await axios.post('http://localhost:3000/user', formData);
-        toast.success('User added successfully');
+        await axios.post("http://localhost:3000/user", formData);
+        toast.success("User added successfully");
       }
       fetchData();
       resetForm();
     } catch (error) {
       console.error(error);
-      toast.error('Failed to save user');
+      toast.error("Failed to save user");
     }
   };
 
   const resetForm = () => {
     setFormData({
-      userName: '',
-      email: '',
-      phone: '',
-      address: '',
-      gst: ''
+      userName: "",
+      email: "",
+      phone: "",
+      address: "",
+      gst: "",
     });
     setEditMode(false);
     setCurrentUserId(null);
@@ -120,10 +123,16 @@ const User = () => {
               <td className="px-4 py-2 border">{user.address}</td>
               <td className="px-4 py-2 border">{user.gst}</td>
               <td className="px-4 py-2 border space-x-2">
-                <button onClick={() => handleEdit(user)} className="text-blue-500">
+                <button
+                  onClick={() => handleEdit(user)}
+                  className="text-blue-500"
+                >
                   <FaEdit />
                 </button>
-                <button onClick={() => handleDelete(user)} className="text-red-500">
+                <button
+                  onClick={() => handleDelete(user)}
+                  className="text-red-500"
+                >
                   <FaTrash />
                 </button>
               </td>
@@ -136,7 +145,7 @@ const User = () => {
         <div className="fixed inset-0 flex items-center justify-center bg-opacity-40 z-50">
           <div className="bg-white p-6 rounded-lg w-full max-w-md relative">
             <h2 className="text-lg font-semibold mb-4">
-              {editMode ? 'Edit User' : 'Add New User'}
+              {editMode ? "Edit User" : "Add New User"}
             </h2>
             <button
               onClick={resetForm}
@@ -146,10 +155,13 @@ const User = () => {
             </button>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {['userName', 'email', 'phone', 'address', 'gst'].map((field) => (
+              {["userName", "email", "phone", "address", "gst"].map((field) => (
                 <div key={field}>
-                  <label className="block text-sm font-medium capitalize">{field}</label>
+                  <label className="block text-sm font-medium capitalize">
+                    {field}
+                  </label>
                   <input
+                    required
                     type="text"
                     name={field}
                     value={formData[field]}
@@ -165,7 +177,7 @@ const User = () => {
                   type="submit"
                   className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                 >
-                  {editMode ? 'Update User' : 'Add User'}
+                  {editMode ? "Update User" : "Add User"}
                 </button>
               </div>
             </form>

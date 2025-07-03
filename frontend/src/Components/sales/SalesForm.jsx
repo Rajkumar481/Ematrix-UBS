@@ -24,7 +24,6 @@ const SalesForm = () => {
   });
 
   const [productData, setProductData] = useState([]);
-
   const [resetFlag, setResetFlag] = useState(false);
 
   useEffect(() => {
@@ -65,7 +64,7 @@ const SalesForm = () => {
 
     const payload = productData.map((prod) => ({
       userId: userForm.userId,
-      purchaseId: prod.purchaseId,
+      purchaseId: prod.purchaseId, // ✅ MUST include this for backend
       productName: prod.productName,
       quantity: Number(prod.quantity),
       orderId: orderForm.orderId,

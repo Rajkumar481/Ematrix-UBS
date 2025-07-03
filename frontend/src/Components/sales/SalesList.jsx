@@ -5,14 +5,28 @@ import { useNavigate } from "react-router-dom";
 export default function SalesList() {
   const navigate = useNavigate();
   const [salesData, setSalesData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSale, setEditingSale] = useState(null);
+
+  // Filters
+  const [searchProduct, setSearchProduct] = useState("");
+  const [searchUsername, setSearchUsername] = useState("");
+  const [startDate, setStartDate] = useState(() => {
+    const today = new Date().toISOString().split("T")[0];
+    return today;
+  });
+  const [endDate, setEndDate] = useState(() => {
+    const today = new Date().toISOString().split("T")[0];
+    return today;
+  });
 
   const fetchSales = async () => {
     try {
       const response = await axios.get("http://localhost:3000/sales");
       setSalesData(response.data);
+      setFilteredData(response.data); // initial filtered data
       console.log(response.data);
     } catch (error) {
       console.error("Error fetching sales data:", error);
@@ -21,12 +35,45 @@ export default function SalesList() {
     }
   };
 
+  useEffect(() => {
+    fetchSales();
+  }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [searchProduct, searchUsername, startDate, endDate, salesData]);
+
+  const applyFilters = () => {
+    const filtered = salesData.filter((item) => {
+      const productMatch = searchProduct
+        ? item.items.some((it) =>
+            it.productName.toLowerCase().includes(searchProduct.toLowerCase())
+          )
+        : true;
+
+      const usernameMatch = searchUsername
+        ? item.userId?.userName
+            ?.toLowerCase()
+            .includes(searchUsername.toLowerCase())
+        : true;
+
+      const createdAtDate = new Date(item.createdAt)
+        .toISOString()
+        .split("T")[0];
+      const afterStart = startDate ? createdAtDate >= startDate : true;
+      const beforeEnd = endDate ? createdAtDate <= endDate : true;
+
+      return productMatch && usernameMatch && afterStart && beforeEnd;
+    });
+    setFilteredData(filtered);
+  };
+
   const handleEdit = (id) => {
     const sale = salesData.find((item) => item._id === id);
     if (sale) {
       setEditingSale({
         ...sale,
-        quantity: sale.quantity.toString(),
+        quantity: sale.quantity?.toString() || "",
         billingDate: sale.billingDate,
         dueDate: sale.dueDate,
         modeOfPayment: sale.modeOfPayment || "Cash",
@@ -67,15 +114,53 @@ export default function SalesList() {
     }
   };
 
-  useEffect(() => {
-    fetchSales();
-  }, []);
-
   return (
     <div className="w-full max-w-6xl mx-auto p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Sales Data</h1>
         <p className="text-gray-600 mt-2">Manage your sales records</p>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white p-4 rounded-lg shadow mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label className="text-sm text-gray-700">Product Name</label>
+          <input
+            type="text"
+            value={searchProduct}
+            onChange={(e) => setSearchProduct(e.target.value)}
+            className="mt-1 w-full border-gray-300 rounded-md shadow-sm"
+            placeholder="Search by product"
+          />
+        </div>
+        <div>
+          <label className="text-sm text-gray-700">Username</label>
+          <input
+            type="text"
+            value={searchUsername}
+            onChange={(e) => setSearchUsername(e.target.value)}
+            className="mt-1 w-full border-gray-300 rounded-md shadow-sm"
+            placeholder="Search by username"
+          />
+        </div>
+        <div>
+          <label className="text-sm text-gray-700">Start Date</label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="mt-1 w-full border-gray-300 rounded-md shadow-sm"
+          />
+        </div>
+        <div>
+          <label className="text-sm text-gray-700">End Date</label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="mt-1 w-full border-gray-300 rounded-md shadow-sm"
+          />
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-lg border border-grey-200 overflow-hidden">
@@ -103,7 +188,7 @@ export default function SalesList() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {salesData.map((item, index) => (
+            {filteredData.map((item, index) => (
               <tr
                 key={item._id}
                 className="hover:bg-gray-50 transition-colors duration-200"
@@ -113,16 +198,16 @@ export default function SalesList() {
                   {index + 1}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {item.purchaseId?.productName || "N/A"}
+                  {item.items?.map((i) => i.productName).join(", ") || "N/A"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                   {item.userId?.userName || "N/A"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                  {item.quantity}
+                  {item.items?.reduce((sum, i) => sum + i.quantity, 0) || 0}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700">
-                  {(Number(item.totalAmount) || 0).toFixed(2)}
+                  {(Number(item.grandTotal) || 0).toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-center">
                   <div className="flex items-center justify-center gap-3">
@@ -131,6 +216,7 @@ export default function SalesList() {
                       className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 p-2 rounded-full transition-all duration-200"
                       title="Edit"
                     >
+                      {/* ... unchanged SVG */}
                       <svg
                         className="w-4 h-4"
                         fill="none"
@@ -150,6 +236,7 @@ export default function SalesList() {
                       className="text-red-600 hover:text-red-800 hover:bg-red-100 p-2 rounded-full transition-all duration-200"
                       title="Delete"
                     >
+                      {/* ... unchanged SVG */}
                       <svg
                         className="w-4 h-4"
                         fill="none"
@@ -172,12 +259,13 @@ export default function SalesList() {
         </table>
       </div>
 
-      {!loading && salesData.length === 0 && (
+      {!loading && filteredData.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">No sales data available</p>
         </div>
       )}
 
+      {/* unchanged modal */}
       {isModalOpen && editingSale && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg relative">

@@ -66,7 +66,6 @@ const Salescalculation = ({ onChange, onSubmit, reset }) => {
     );
 
     if (name === "quantity") {
-      // Add a new empty row if typing quantity in the last row
       if (index === productRows.length - 1) {
         setProductRows((prev) => [
           ...prev,
@@ -82,7 +81,6 @@ const Salescalculation = ({ onChange, onSubmit, reset }) => {
       }
     }
 
-    // update parent with products where quantity is filled
     const updatedProducts = productRows
       .map((row, i) => (i === index ? { ...row, [name]: value } : row))
       .filter((p) => p.purchaseId && p.quantity);

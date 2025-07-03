@@ -1,29 +1,83 @@
 import mongoose from "mongoose";
 
-const PurchaseSchema = new mongoose.Schema({
-  purchaseId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Company",
-    required: true,
+const PurchaseSchema = new mongoose.Schema(
+  {
+    purchaseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      required: true,
+    },
+    invoiceNo: {
+      type: String,
+      required: true,
+    },
+    productName: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    despatchedThrough: {
+      type: String,
+      required: true,
+    },
+    billingDate: {
+      type: String,
+      required: true,
+    },
+    deliveryDate: {
+      type: String,
+      required: true,
+    },
+    vehicleNo: {
+      type: String,
+    },
+    driverPhoneNo: {
+      type: String,
+      required: true,
+    },
+    purchaseOrderId: {
+      type: String,
+      required: true,
+    },
+    hsnCode: {
+      type: String,
+      required: true,
+    },
+    quantity: {
+      type: String,
+      required: true,
+    },
+    purchasePrice: {
+      type: String,
+      required: true,
+    },
+    sellingPrice: {
+      type: String,
+      required: true,
+    },
+    gst: {
+      type: String,
+      required: true,
+    },
+    gstAmount: {
+      type: String,
+      required: true,
+    },
+    total: {
+      type: String,
+      required: true,
+    },
+    totalAmount: {
+      type: String,
+      required: true,
+    },
+    profit: {
+      type: String,
+      required: true,
+    },
   },
-  invoiceNo: String,
-  productName: String,
-  despatchedThrough: String,
-  billingDate: Date,
-  deliveryDate: Date,
-  vehicleNo: Number,
-  driverPhoneNo: Number,
-  purchaseOrderId: Number,
-  hsnCode: Number,
-  quantity: Number,
-  purchasePrice: Number,
-  sellingPrice: Number,
-  gst: Number,
-  gstAmount: Number,
-  total: Number,
-  totalAmount: Number,
-  profit: Number,
-});
+  { timestamps: true }
+);
 
 PurchaseSchema.pre("save", function (next) {
   const { quantity = 0, purchasePrice = 0, gst = 0, sellingPrice = 0 } = this;
