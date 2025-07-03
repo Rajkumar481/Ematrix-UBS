@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Salescalculation from "./Salescalculation";
+import { toast } from "react-toastify";
 
 const SalesForm = () => {
   const [userList, setUserList] = useState([]);
-  const [productList, setProductList] = useState([]);
+  const today = new Date().toISOString().split("T")[0];
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
   const [userForm, setUserForm] = useState({
     userId: "",
@@ -16,27 +18,20 @@ const SalesForm = () => {
 
   const [orderForm, setOrderForm] = useState({
     orderId: "",
-    billingDate: "",
+    billingDate: today,
     dueDate: "",
-    modeOfPayment: "Cash",
+    modeOfPayment: "Credit",
   });
 
-  const [productData, setProductData] = useState({
-    purchaseId: "",
-    productName: "",
-    quantity: "",
-  });
+  const [productData, setProductData] = useState([]);
+
+  const [resetFlag, setResetFlag] = useState(false);
 
   useEffect(() => {
     axios
       .get("http://localhost:3000/user")
       .then((res) => setUserList(res.data))
       .catch((err) => console.error("Failed to load users", err));
-
-    axios
-      .get("http://localhost:3000/purchase")
-      .then((res) => setProductList(res.data))
-      .catch((err) => console.error("Failed to load products", err));
   }, []);
 
   const handleUserChange = (e) => {
@@ -63,24 +58,47 @@ const SalesForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const payload = {
+    if (!userForm.userId || productData.length === 0) {
+      toast.error("Please complete all required fields (user & products)");
+      return;
+    }
+
+    const payload = productData.map((prod) => ({
       userId: userForm.userId,
-      purchaseId: productData.purchaseId,
-      productName: productData.productName,
-      quantity: productData.quantity,
+      purchaseId: prod.purchaseId,
+      productName: prod.productName,
+      quantity: Number(prod.quantity),
       orderId: orderForm.orderId,
       billingDate: orderForm.billingDate,
       dueDate: orderForm.dueDate,
       modeOfPayment: orderForm.modeOfPayment,
-    };
+    }));
+
+    console.log("Submitting payload:", payload);
 
     try {
-      const res = await axios.post("http://localhost:3000/sales", payload);
-      console.log("Sales submission successful:", res.data);
-      alert("Sales submitted!");
+      await axios.post("http://localhost:3000/sales/", payload);
+      toast.success("Sales submitted!");
+
+      setUserForm({
+        userId: "",
+        username: "",
+        email: "",
+        phone: "",
+        address: "",
+      });
+      setOrderForm({
+        orderId: "",
+        billingDate: today,
+        dueDate: "",
+        modeOfPayment: "Credit",
+      });
+      setProductData([]);
+      setResetFlag(true);
+      setTimeout(() => setResetFlag(false), 100);
     } catch (err) {
-      console.error("Submission error:", err.response?.data || err.message);
-      alert("Sales submission failed");
+      console.error(err);
+      toast.error("Failed to submit sales");
     }
   };
 
@@ -154,6 +172,7 @@ const SalesForm = () => {
             onChange={handleOrderChange}
             className="w-full border p-2 rounded-md"
             required
+            max={today}
           />
 
           <label>Due Date:</label>
@@ -164,6 +183,7 @@ const SalesForm = () => {
             onChange={handleOrderChange}
             className="w-full border p-2 rounded-md"
             required
+            min={tomorrow}
           />
 
           <label>Mode of Payment:</label>
@@ -172,15 +192,19 @@ const SalesForm = () => {
             value={orderForm.modeOfPayment}
             onChange={handleOrderChange}
             className="w-full border p-2 rounded-md"
+            required
           >
-            <option value="Cash">Cash</option>
             <option value="Credit">Credit</option>
+            <option value="Cash">Cash</option>
           </select>
         </form>
       </div>
 
-      {/* Product Entry and Final Submit */}
-      <Salescalculation onChange={setProductData} onSubmit={handleSubmit} />
+      <Salescalculation
+        onChange={setProductData}
+        onSubmit={handleSubmit}
+        reset={resetFlag}
+      />
     </div>
   );
 };

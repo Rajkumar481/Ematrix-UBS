@@ -78,7 +78,7 @@ export default function SalesList() {
         <p className="text-gray-600 mt-2">Manage your sales records</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-lg shadow-lg border border-grey-200 overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
@@ -95,7 +95,7 @@ export default function SalesList() {
                 Quantity
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Rate
+                Total Amount
               </th>
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -122,7 +122,7 @@ export default function SalesList() {
                   {item.quantity}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700">
-                  ${item.purchaseId?.sellingPrice?.toFixed(2) || "0.00"}
+                  {(Number(item.totalAmount) || 0).toFixed(2)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-center">
                   <div className="flex items-center justify-center gap-3">

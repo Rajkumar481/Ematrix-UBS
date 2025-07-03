@@ -7,6 +7,7 @@ const Sidebar = ({ setActiveComponent }) => {
     { label: "Product Details", value: "product" },
     { label: "Sales Form", value: "sales" },
     { label: "Sales List", value: "sales-list" },
+    { label: "Stock Overview", value: "stock" },
   ];
 
   return (

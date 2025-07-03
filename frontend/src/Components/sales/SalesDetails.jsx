@@ -22,153 +22,197 @@ export default function SalesDetails() {
   if (!sale) return <div className="text-center py-12">Loading...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto my-4 p-6 bg-white border shadow rounded text-gray-800">
-      <h1 className="text-2xl font-bold text-center mb-2">Tax Invoice</h1>
+    <>
+      <style>
+        {`
+          body {
+            background-color: #e5e7eb; /* light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+          }
 
-      {/* Invoice metadata */}
-      <div className="flex flex-col sm:flex-row justify-between border p-4 mb-6">
-        <div className="space-y-1">
-          <div>
-            <strong>Invoice No:</strong> {sale.purchaseId?.invoiceNo || "N/A"}
+          @media print {
+            @page {
+              size: A5 portrait;
+              margin: 1cm;
+            }
+
+            body {
+              background-color: white !important;
+              -webkit-print-color-adjust: exact;
+              color-adjust: exact;
+            }
+
+            .no-print {
+              display: none !important;
+            }
+          }
+        `}
+      </style>
+
+      <div
+        className="invoice my-4 p-6 border shadow rounded text-gray-800"
+        style={{
+          width: "14.8cm", // A3 width
+          minHeight: "21cm", // A3 height
+          backgroundColor: "white",
+          boxShadow: "0 0 20px rgba(0,0,0,0.1)",
+        }}
+      >
+        <h1 className="text-2xl font-bold text-center mb-2">Tax Invoice</h1>
+
+        {/* Invoice metadata */}
+        <div className="flex flex-col sm:flex-row justify-between border p-4 mb-6">
+          <div className="space-y-1">
+            <div>
+              <strong>Invoice No:</strong> {sale.purchaseId?.invoiceNo || "N/A"}
+            </div>
+            <div>
+              <strong>Order ID:</strong> {sale.orderId}
+            </div>
+            <div>
+              <strong>Billing Date:</strong> {sale.billingDate}
+            </div>
+            <div>
+              <strong>Due Date:</strong> {sale.dueDate}
+            </div>
+            <div>
+              <strong>Mode of Payment:</strong> {sale.modeOfPayment}
+            </div>
           </div>
-          <div>
-            <strong>Order ID:</strong> {sale.orderId}
-          </div>
-          <div>
-            <strong>Billing Date:</strong> {sale.billingDate}
-          </div>
-          <div>
-            <strong>Due Date:</strong> {sale.dueDate}
-          </div>
-          <div>
-            <strong>Mode of Payment:</strong> {sale.modeOfPayment}
+          <div className="space-y-1 text-right">
+            <div>
+              <strong>Generated On:</strong> {new Date().toLocaleDateString()}
+            </div>
+            <div>
+              <strong>Invoice Amount:</strong> ₹
+              {(Number(sale.totalAmount) || 0).toFixed(2)}
+            </div>
           </div>
         </div>
-        <div className="space-y-1 text-right">
+
+        {/* Seller & Buyer info */}
+        <div className="grid sm:grid-cols-2 gap-6 border p-4 mb-6">
           <div>
-            <strong>Generated On:</strong> {new Date().toLocaleDateString()}
+            <h2 className="font-semibold text-lg mb-2">Seller Details</h2>
+            <div>
+              <strong>Company:</strong> Your Company Pvt Ltd
+            </div>
+            <div>
+              <strong>Address:</strong> Company Address Here
+            </div>
+            <div>
+              <strong>GSTIN:</strong> 29XXXXX1234Z5A
+            </div>
           </div>
           <div>
-            <strong>Invoice Amount:</strong> ₹{sale.totalAmount}
+            <h2 className="font-semibold text-lg mb-2">Buyer Details</h2>
+            <div>
+              <strong>Name:</strong> {sale.userId?.userName}
+            </div>
+            <div>
+              <strong>Email:</strong> {sale.userId?.email}
+            </div>
+            <div>
+              <strong>Phone:</strong> {sale.userId?.phone}
+            </div>
+            <div>
+              <strong>Address:</strong> {sale.userId?.address}
+            </div>
+            <div>
+              <strong>GST %:</strong> {sale.userId?.gst}%
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Seller & Buyer info */}
-      <div className="grid sm:grid-cols-2 gap-6 border p-4 mb-6">
-        <div>
-          <h2 className="font-semibold text-lg mb-2">Seller Details</h2>
-          <div>
-            <strong>Company:</strong> Your Company Pvt Ltd
+        {/* Product table */}
+        <div className="overflow-x-auto mb-6">
+          <table className="min-w-full border text-sm">
+            <thead className="bg-gray-100">
+              <tr className="border-b">
+                <th className="p-2 text-left">Sl No.</th>
+                <th className="p-2 text-left">Description of Goods</th>
+                <th className="p-2 text-left">HSN</th>
+                <th className="p-2 text-right">Quantity</th>
+                <th className="p-2 text-right">Rate</th>
+                <th className="p-2 text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b">
+                <td className="p-2">1</td>
+                <td className="p-2">{sale.purchaseId?.productName}</td>
+                <td className="p-2">{sale.purchaseId?.hsnCode}</td>
+                <td className="p-2 text-right">{sale.quantity}</td>
+                <td className="p-2 text-right">
+                  ₹{(Number(sale.purchaseId?.sellingPrice) || 0).toFixed(2)}
+                </td>
+                <td className="p-2 text-right">
+                  ₹{(Number(sale.total) || 0).toFixed(2)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Tax summary */}
+        <div className="border p-4 mb-6">
+          <div className="flex justify-between mb-2">
+            <div>Taxable Value:</div>
+            <div>₹{(Number(sale.total) || 0).toFixed(2)}</div>
           </div>
-          <div>
-            <strong>Address:</strong> Company Address Here
+          <div className="flex justify-between mb-2">
+            <div>GST ({sale.purchaseId?.gst || 0}%):</div>
+            <div>₹{(Number(sale.gstAmount) || 0).toFixed(2)}</div>
           </div>
-          <div>
-            <strong>GSTIN:</strong> 29XXXXX1234Z5A
+          <div className="flex justify-between border-t pt-2 font-bold">
+            <div>Total Amount:</div>
+            <div>₹{(Number(sale.totalAmount) || 0).toFixed(2)}</div>
           </div>
         </div>
-        <div>
-          <h2 className="font-semibold text-lg mb-2">Buyer Details</h2>
-          <div>
-            <strong>Name:</strong> {sale.userId?.userName}
-          </div>
-          <div>
-            <strong>Email:</strong> {sale.userId?.email}
-          </div>
-          <div>
-            <strong>Phone:</strong> {sale.userId?.phone}
-          </div>
-          <div>
-            <strong>Address:</strong> {sale.userId?.address}
-          </div>
-          <div>
-            <strong>GST %:</strong> {sale.userId?.gst}%
-          </div>
+
+        {/* Amount in words */}
+        <div className="italic mb-6">
+          Amount Chargeable (in words):{" "}
+          <strong>Rupees {numberToWords(Number(sale.totalAmount))} Only</strong>
+        </div>
+
+        {/* Declaration */}
+        <div className="text-xs text-gray-600 border-t pt-2 mb-6">
+          We declare that this invoice shows the actual price of the goods
+          described and that all particulars are true and correct.
+        </div>
+
+        <div className="text-right text-sm">
+          <p>Authorized Signatory</p>
+        </div>
+
+        <div className="flex justify-end mt-8 gap-4 no-print">
+          <button
+            onClick={() => navigate(-1)}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Back
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          >
+            Print Invoice
+          </button>
         </div>
       </div>
-
-      {/* Product table */}
-      <div className="overflow-x-auto mb-6">
-        <table className="min-w-full border text-sm">
-          <thead className="bg-gray-100">
-            <tr className="border-b">
-              <th className="p-2 text-left">Sl No.</th>
-              <th className="p-2 text-left">Description of Goods</th>
-              <th className="p-2 text-left">HSN</th>
-              <th className="p-2 text-right">Quantity</th>
-              <th className="p-2 text-right">Rate</th>
-              <th className="p-2 text-right">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-b">
-              <td className="p-2">1</td>
-              <td className="p-2">{sale.purchaseId?.productName}</td>
-              <td className="p-2">{sale.purchaseId?.hsnCode}</td>
-              <td className="p-2 text-right">{sale.quantity}</td>
-              <td className="p-2 text-right">
-                ₹{sale.purchaseId?.sellingPrice}
-              </td>
-              <td className="p-2 text-right">₹{sale.total}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      {/* Tax summary */}
-      <div className="border p-4 mb-6">
-        <div className="flex justify-between mb-2">
-          <div>Taxable Value:</div>
-          <div>₹{sale.total}</div>
-        </div>
-        <div className="flex justify-between mb-2">
-          <div>GST ({sale.purchaseId?.gst || 0}%):</div>
-          <div>₹{sale.gstAmount}</div>
-        </div>
-        <div className="flex justify-between border-t pt-2 font-bold">
-          <div>Total Amount:</div>
-          <div>₹{sale.totalAmount}</div>
-        </div>
-      </div>
-
-      {/* Amount in words */}
-      <div className="italic mb-6">
-        Amount Chargeable (in words):{" "}
-        <strong>Rupees {numberToWords(sale.totalAmount)} Only</strong>
-      </div>
-
-      {/* Declaration */}
-      <div className="text-xs text-gray-600 border-t pt-2 mb-6">
-        We declare that this invoice shows the actual price of the goods
-        described and that all particulars are true and correct.
-      </div>
-
-      <div className="text-right text-sm">
-        <p>Authorized Signatory</p>
-      </div>
-
-      <div className="flex justify-end mt-8 gap-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Back
-        </button>
-        <button
-          onClick={() => window.print()}
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-        >
-          Print Invoice
-        </button>
-      </div>
-    </div>
+    </>
   );
 }
 
-// Simple function to convert amount to words (limited, e.g. for up to thousands)
+// Simple amount-to-words converter (limited)
 function numberToWords(amount) {
-  if (!amount) return "";
+  if (isNaN(amount) || amount <= 0) return "Zero";
   const words = [
     "",
     "One",
@@ -192,5 +236,5 @@ function numberToWords(amount) {
       " Hundred " +
       numberToWords(num % 100)
     ).trim();
-  return num.toString(); // fallback
+  return num.toString(); // fallback for large numbers
 }
