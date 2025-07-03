@@ -11,9 +11,9 @@ const StockPage = () => {
     quantity: "",
   });
 
-  const [salesData, setSalesData] = useState([]); // Fetched data
-  const [filteredStock, setFilteredStock] = useState([]); // Displayed data
-  const [loading, setLoading] = useState(true); // Loading state
+  const [salesData, setSalesData] = useState([]);
+  const [filteredStock, setFilteredStock] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchSales = async () => {
     try {
@@ -53,18 +53,22 @@ const StockPage = () => {
 
     if (filters.productName) {
       filtered = filtered.filter((item) =>
-        item.purchaseId.productName
-          .toLowerCase()
-          .includes(filters.productName.toLowerCase())
+        item.items.some((i) =>
+          i.productName
+            .toLowerCase()
+            .includes(filters.productName.toLowerCase())
+        )
       );
     }
+
     if (filters.userName) {
       filtered = filtered.filter((item) =>
-        item.userId.userName
-          .toLowerCase()
+        item.userId?.userName
+          ?.toLowerCase()
           .includes(filters.userName.toLowerCase())
       );
     }
+
     if (filters.startDate) {
       filtered = filtered.filter(
         (item) => new Date(item.billingDate) >= new Date(filters.startDate)
@@ -75,20 +79,28 @@ const StockPage = () => {
         (item) => new Date(item.billingDate) <= new Date(filters.endDate)
       );
     }
+
     if (filters.modeOfPayment) {
       filtered = filtered.filter(
         (item) => item.modeOfPayment === filters.modeOfPayment
       );
     }
+
     if (filters.quantity) {
-      filtered = filtered.filter((item) => item.quantity === filters.quantity);
+      filtered = filtered.filter((item) => {
+        const totalQty = item.items.reduce(
+          (sum, i) => sum + Number(i.quantity || 0),
+          0
+        );
+        return totalQty === Number(filters.quantity);
+      });
     }
 
     setFilteredStock(filtered);
   };
 
   const grandTotal = filteredStock.reduce(
-    (sum, item) => sum + (Number(item.totalAmount) || 0),
+    (sum, item) => sum + (Number(item.grandTotal) || 0),
     0
   );
 
@@ -162,31 +174,38 @@ const StockPage = () => {
         <table className="min-w-full bg-white">
           <thead className="bg-gray-100 text-gray-700">
             <tr>
-              <th className="py-2 px-4 text-left">Order ID</th>
-              <th className="py-2 px-4 text-left">Product</th>
+              <th className="py-3 px-4 text-left">Order ID</th>
+              <th className="py-2 px-4 text-left">Products</th>
               <th className="py-2 px-4 text-left">User</th>
               <th className="py-2 px-4 text-left">Billing Date</th>
               <th className="py-2 px-4 text-left">Quantity</th>
               <th className="py-2 px-4 text-left">Mode</th>
-              <th className="py-2 px-4 text-left">Total Amount</th>
+              <th className="py-2 px-4 text-left"> Amount</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="">
             {filteredStock.length > 0 ? (
               filteredStock.map((item) => (
                 <tr
                   key={item._id}
-                  className="border-b last:border-b-0 hover:bg-gray-50"
+                  className="border-b  last:border-b-0 hover:bg-gray-50"
                 >
-                  <td className="py-2 px-4">{item.orderId}</td>
+                  <td className="py-3 px-4">{item.orderId}</td>
                   <td className="py-2 px-4">
-                    {item.purchaseId.productName || "N/A"}
+                    {item.items?.map((i) => i.productName).join(", ") || "N/A"}
                   </td>
-                  <td className="py-2 px-4">{item.userId.userName}</td>
+                  <td className="py-2 px-4">
+                    {item.userId?.userName || "N/A"}
+                  </td>
                   <td className="py-2 px-4">{formatDate(item.billingDate)}</td>
-                  <td className="py-2 px-4">{item.quantity}</td>
+                  <td className="py-2 px-4">
+                    {item.items?.reduce(
+                      (sum, i) => sum + Number(i.quantity || 0),
+                      0
+                    )}
+                  </td>
                   <td className="py-2 px-4">{item.modeOfPayment}</td>
-                  <td className="py-2 px-4">{item.totalAmount}</td>
+                  <td className="py-2 px-4">{item.grandTotal}</td>
                 </tr>
               ))
             ) : (
@@ -201,7 +220,7 @@ const StockPage = () => {
       </div>
 
       <div className="mt-4 text-right">
-        <p className="text-lg text-green-600  font-semibold">
+        <p className="text-lg text-green-600 font-semibold">
           Grand Total: ₹{grandTotal.toFixed(2)}
         </p>
       </div>

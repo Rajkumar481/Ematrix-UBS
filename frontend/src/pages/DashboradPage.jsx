@@ -6,6 +6,7 @@ import Product from "../Components/Product";
 import SalesForm from "../Components/sales/SalesForm";
 import SalesList from "../Components/sales/SalesList";
 import StockPage from "../Components/Stock/StockPage";
+import ProfitForm from "../Components/Profit/ProfitForm";
 
 const Dashboard = () => {
   const [activeComponent, setActiveComponent] = useState("");
@@ -24,6 +25,8 @@ const Dashboard = () => {
         return <SalesList />;
       case "stock":
         return <StockPage />;
+      case "profit":
+        return <ProfitForm />;
       default:
         return (
           <div className="text-gray-500 text-lg h-full flex items-center justify-center">

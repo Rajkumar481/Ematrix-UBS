@@ -64,7 +64,7 @@ const SalesForm = () => {
 
     const payload = productData.map((prod) => ({
       userId: userForm.userId,
-      purchaseId: prod.purchaseId, // ✅ MUST include this for backend
+      purchaseId: prod.purchaseId,
       productName: prod.productName,
       quantity: Number(prod.quantity),
       orderId: orderForm.orderId,
@@ -97,7 +97,7 @@ const SalesForm = () => {
       setTimeout(() => setResetFlag(false), 100);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to submit sales");
+      toast.error("Failed to submit sales", { msg: err });
     }
   };
 

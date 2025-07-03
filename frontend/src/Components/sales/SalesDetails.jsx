@@ -21,21 +21,28 @@ export default function SalesDetails() {
 
   if (!sale) return <div className="text-center py-12">Loading...</div>;
 
+  const calculateTotalAmount = () =>
+    sale.items?.reduce(
+      (sum, item) =>
+        sum + (item.quantity || 0) * (item.purchaseId?.sellingPrice || 0),
+      0
+    ) || 0;
+
+  const calculateTotalGST = () =>
+    sale.items?.reduce((sum, item) => sum + (item.gstAmount || 0), 0) || 0;
+
+  const grandTotal = calculateTotalAmount() + calculateTotalGST();
+
   return (
     <>
       <style>
         {`
           body {
             background-color: #e5e7eb;
-            display: flex;
-            justify-content: center;
-            align-items: start;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
             font-family: "Segoe UI", Arial, sans-serif;
             font-size: 12px;
             color: #000;
+            padding: 20px;
           }
 
           h1, h2 {
@@ -47,22 +54,16 @@ export default function SalesDetails() {
             font-weight: 600;
           }
 
-          table, td, th {
-            font-size: 12px;
-          }
-
           @media print {
             @page {
               size: A5 portrait;
               margin: 1cm;
             }
-
             body {
               background-color: white !important;
               -webkit-print-color-adjust: exact;
               color-adjust: exact;
             }
-
             .no-print {
               display: none !important;
             }
@@ -71,15 +72,14 @@ export default function SalesDetails() {
       </style>
 
       <div
-        className="invoice my-4 p-6 border shadow rounded text-gray-800"
+        className="invoice mx-auto p-6 border shadow rounded text-gray-800"
         style={{
           width: "14.8cm",
           minHeight: "21cm",
           backgroundColor: "white",
-          boxShadow: "0 0 20px rgba(0,0,0,0.1)",
         }}
       >
-        <h1 className="text-center mb-2">Tax Invoice</h1>
+        <h1 className="text-center mb-4">Tax Invoice</h1>
 
         {/* Invoice Info */}
         <div className="flex flex-col sm:flex-row justify-between border p-4 mb-6">
@@ -99,7 +99,8 @@ export default function SalesDetails() {
           </div>
           <div className="space-y-1 text-right">
             <div>
-              <strong>Generated On:</strong> {new Date().toLocaleDateString()}
+              <strong>Generated On:</strong>{" "}
+              {new Date(sale.createdAt).toLocaleDateString()}
             </div>
           </div>
         </div>
@@ -116,25 +117,22 @@ export default function SalesDetails() {
               Kumarasamipatti, Salem, Tamil Nadu 636007
             </div>
             <div>
-              <strong>GSTIN:</strong> 29XXXXX1234Z5A
+              <strong>GSTIN:</strong> 29XXXXXX1234Z5A
             </div>
           </div>
           <div className="w-1/2 pl-4 text-left">
             <h2 className="mb-2">Buyer Details</h2>
             <div>
-              <strong>Name:</strong> {sale.userId?.userName}
+              <strong>Name:</strong> {sale.userId?.userName || "N/A"}
             </div>
             <div>
-              <strong>Email:</strong> {sale.userId?.email}
+              <strong>Email:</strong> {sale.userId?.email || "N/A"}
             </div>
             <div>
-              <strong>Phone:</strong> {sale.userId?.phone}
+              <strong>Phone:</strong> {sale.userId?.phone || "N/A"}
             </div>
             <div>
-              <strong>Address:</strong> {sale.userId?.address}
-            </div>
-            <div>
-              <strong>GST %:</strong> {sale.userId?.gst}%
+              <strong>Address:</strong> {sale.userId?.address || "N/A"}
             </div>
           </div>
         </div>
@@ -153,18 +151,24 @@ export default function SalesDetails() {
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b">
-                <td className="p-2">1</td>
-                <td className="p-2">{sale.purchaseId?.productName}</td>
-                <td className="p-2">{sale.purchaseId?.hsnCode}</td>
-                <td className="p-2 text-right">{sale.quantity}</td>
-                <td className="p-2 text-right">
-                  ₹{(Number(sale.purchaseId?.sellingPrice) || 0).toFixed(2)}
-                </td>
-                <td className="p-2 text-right">
-                  ₹{(Number(sale.total) || 0).toFixed(2)}
-                </td>
-              </tr>
+              {sale.items?.map((item, idx) => (
+                <tr key={idx} className="border-b">
+                  <td className="p-2">{idx + 1}</td>
+                  <td className="p-2">{item.productName || "N/A"}</td>
+                  <td className="p-2">{item.purchaseId?.hsnCode || "N/A"}</td>
+                  <td className="p-2 text-right">{item.quantity || 0}</td>
+                  <td className="p-2 text-right">
+                    ₹{Number(item.purchaseId?.sellingPrice || 0).toFixed(2)}
+                  </td>
+                  <td className="p-2 text-right">
+                    ₹
+                    {(
+                      (item.quantity || 0) *
+                      (item.purchaseId?.sellingPrice || 0)
+                    ).toFixed(2)}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -173,28 +177,22 @@ export default function SalesDetails() {
         <div className="border p-4 mb-6">
           <div className="flex justify-between mb-2">
             <div>Taxable Value:</div>
-            <div>₹{(Number(sale.total) || 0).toFixed(2)}</div>
+            <div>₹{calculateTotalAmount().toFixed(2)}</div>
           </div>
           <div className="flex justify-between mb-2">
-            <div>GST ({sale.purchaseId?.gst || 0}%):</div>
-            <div>₹{(Number(sale.gstAmount) || 0).toFixed(2)}</div>
+            <div>GST:</div>
+            <div>₹{calculateTotalGST().toFixed(2)}</div>
           </div>
           <div className="flex justify-between border-t pt-2 font-bold">
             <div>Total Amount:</div>
-            <div>₹{(Number(sale.totalAmount) || 0).toFixed(2)}</div>
+            <div>₹{grandTotal.toFixed(2)}</div>
           </div>
         </div>
 
         {/* Amount in Words */}
         <div className="italic mb-6">
           Amount Chargeable (in words):{" "}
-          <strong>Rupees {numberToWords(Number(sale.totalAmount))} Only</strong>
-        </div>
-
-        {/* Declaration */}
-        <div className="text-xs text-gray-600 border-t pt-2 mb-6">
-          We declare that this invoice shows the actual price of the goods
-          described and that all particulars are true and correct.
+          <strong>Rupees {numberToWords(grandTotal)} Only</strong>
         </div>
 
         <div className="text-right text-sm">

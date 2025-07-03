@@ -8,6 +8,7 @@ const Sidebar = ({ setActiveComponent }) => {
     { label: "Sales Form", value: "sales" },
     { label: "Sales List", value: "sales-list" },
     { label: "Stock Overview", value: "stock" },
+    { label: "Profit ", value: "profit" },
   ];
 
   return (

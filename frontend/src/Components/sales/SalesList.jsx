@@ -26,10 +26,11 @@ export default function SalesList() {
     try {
       const response = await axios.get("http://localhost:3000/sales");
       setSalesData(response.data);
-      setFilteredData(response.data); // initial filtered data
+      setFilteredData(response.data);
       console.log(response.data);
     } catch (error) {
       console.error("Error fetching sales data:", error);
+      alert("Failed to fetch sales data. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -102,6 +103,7 @@ export default function SalesList() {
       setIsModalOpen(false);
     } catch (error) {
       console.error("Error updating sales record:", error);
+      alert("Failed to update sales record. Please try again.");
     }
   };
 
@@ -111,14 +113,14 @@ export default function SalesList() {
       setSalesData((prev) => prev.filter((item) => item._id !== id));
     } catch (error) {
       console.error("Error deleting sales record:", error);
+      alert("Failed to delete sales record. Please try again.");
     }
   };
 
   return (
     <div className="w-full max-w-6xl mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Sales Data</h1>
-        <p className="text-gray-600 mt-2">Manage your sales records</p>
+        <h1 className="text-2xl font-bold text-gray-900">Sales</h1>
       </div>
 
       {/* Filters */}
@@ -163,6 +165,7 @@ export default function SalesList() {
         </div>
       </div>
 
+      {/* Table */}
       <div className="bg-white rounded-lg shadow-lg border border-grey-200 overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50">
@@ -212,11 +215,13 @@ export default function SalesList() {
                 <td className="px-6 py-4 whitespace-nowrap text-center">
                   <div className="flex items-center justify-center gap-3">
                     <button
-                      onClick={() => handleEdit(item._id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(item._id);
+                      }}
                       className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 p-2 rounded-full transition-all duration-200"
                       title="Edit"
                     >
-                      {/* ... unchanged SVG */}
                       <svg
                         className="w-4 h-4"
                         fill="none"
@@ -232,11 +237,13 @@ export default function SalesList() {
                       </svg>
                     </button>
                     <button
-                      onClick={() => handleDelete(item._id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(item._id);
+                      }}
                       className="text-red-600 hover:text-red-800 hover:bg-red-100 p-2 rounded-full transition-all duration-200"
                       title="Delete"
                     >
-                      {/* ... unchanged SVG */}
                       <svg
                         className="w-4 h-4"
                         fill="none"
@@ -259,13 +266,19 @@ export default function SalesList() {
         </table>
       </div>
 
+      {loading && (
+        <div className="text-center py-12">
+          <p className="text-gray-500 text-lg">Loading sales data...</p>
+        </div>
+      )}
+
       {!loading && filteredData.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">No sales data available</p>
         </div>
       )}
 
-      {/* unchanged modal */}
+      {/* Modal */}
       {isModalOpen && editingSale && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg relative">
