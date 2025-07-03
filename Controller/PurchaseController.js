@@ -34,6 +34,7 @@ export const createPurchase = async (req, res) => {
     req.body.gstAmount = gstAmount.toFixed(2);
     req.body.totalAmount = totalAmount.toFixed(2);
     req.body.profit = profit.toFixed(2);
+    req.body.salesQuantity = req.body.quantity;
 
     const saved = await Purchase.create(req.body);
     res.status(201).json(saved);

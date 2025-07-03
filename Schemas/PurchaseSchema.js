@@ -75,12 +75,18 @@ const PurchaseSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    salesQuantity: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true }
 );
 
 PurchaseSchema.pre("save", function (next) {
   const { quantity = 0, purchasePrice = 0, gst = 0, sellingPrice = 0 } = this;
+
+  this.salesQuantity = this.salesQuantity ?? this.quantity;
 
   this.total = quantity * purchasePrice;
   this.gstAmount = (this.total * gst) / 100;

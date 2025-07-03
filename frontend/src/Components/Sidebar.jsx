@@ -9,6 +9,7 @@ const Sidebar = ({ setActiveComponent }) => {
     { label: "Sales List", value: "sales-list" },
     { label: "Stock Overview", value: "stock" },
     { label: "Profit ", value: "profit" },
+    { label: "Stock Management ", value: "stack-management" },
   ];
 
   return (
