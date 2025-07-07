@@ -45,6 +45,15 @@ const AddProduct = ({ setActiveComponent }) => {
   }, []);
 
   useEffect(() => {
+    // Set billing date to today by default in create mode
+    if (!id && buyers.length > 0) {
+      const today = new Date().toISOString().split("T")[0];
+      setFormDetails((prev) => ({
+        ...prev,
+        billingDate: today,
+      }));
+    }
+
     if (!id || buyers.length === 0) return;
 
     axios
@@ -189,10 +198,8 @@ const AddProduct = ({ setActiveComponent }) => {
         console.log("Sending payload:", payload);
 
         if (id) {
-          // Edit mode
           await axios.patch(`http://localhost:3000/purchase/${id}`, payload);
         } else {
-          // Create mode
           await axios.post("http://localhost:3000/purchase", payload);
         }
       }
@@ -209,6 +216,9 @@ const AddProduct = ({ setActiveComponent }) => {
       toast.error("Failed to submit products");
     }
   };
+
+  const today = new Date().toISOString().split("T")[0];
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
   return (
     <div className="bg-white p-6 rounded shadow-lg max-w-5xl mx-auto mt-6">
@@ -227,7 +237,6 @@ const AddProduct = ({ setActiveComponent }) => {
               className="w-full px-2 py-1 border rounded text-sm"
               placeholder="Enter or select company name"
               list="company-list"
-              // readOnly={!!id}
             />
             <datalist id="company-list">
               {buyers.map((b) => (
@@ -299,6 +308,13 @@ const AddProduct = ({ setActiveComponent }) => {
               <input
                 required
                 type={label.includes("Date") ? "date" : "text"}
+                min={
+                  label === "Billing Date"
+                    ? today
+                    : label === "Delivery Date"
+                    ? tomorrow
+                    : undefined
+                }
                 className="w-full px-2 py-1 border rounded text-sm"
                 value={
                   formDetails[
@@ -335,7 +351,6 @@ const AddProduct = ({ setActiveComponent }) => {
         </div>
       </form>
 
-      {/* Table */}
       <table className="w-full border-collapse mt-6 text-sm table-fixed">
         <thead>
           <tr className="bg-gray-100">

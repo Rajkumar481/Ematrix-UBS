@@ -10,7 +10,7 @@ import ProfitForm from "../Components/Profit/ProfitForm";
 import StackManagement from "../Components/Stock/StackManagement";
 
 const Dashboard = () => {
-  const [activeComponent, setActiveComponent] = useState("");
+  const [activeComponent, setActiveComponent] = useState("sales");
 
   const renderComponent = () => {
     switch (activeComponent) {

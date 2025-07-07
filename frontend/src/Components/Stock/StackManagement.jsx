@@ -132,7 +132,7 @@ const StackManagement = () => {
                 {user.purchaseId.companyName}
               </td>
               <td className="px-4 py-2 border">{user.productName}</td>
-              <td className="px-4 py-2 border">{user.quantity}</td>
+              <td className="px-4 py-2 border">{user.salesQuantity}</td>
               <td className="px-4 py-2 border">{user.sellingPrice}</td>
               <td className="px-4 py-2 border">{user.purchasePrice}</td>
               <td className="px-4 py-2 border">{user.profit}</td>

@@ -2,14 +2,14 @@ import React from "react";
 
 const Sidebar = ({ setActiveComponent }) => {
   const buttons = [
-    { label: "User Details", value: "user" },
-    { label: "Buyer Details", value: "buyer" },
-    { label: "Product Details", value: "product" },
     { label: "Sales Form", value: "sales" },
     { label: "Sales List", value: "sales-list" },
     { label: "Stock Overview", value: "stock" },
-    { label: "Profit ", value: "profit" },
     { label: "Stock Management ", value: "stack-management" },
+    { label: "Product Details", value: "product" },
+    { label: "User Details", value: "user" },
+    { label: "Buyer Details", value: "buyer" },
+    { label: "Profit ", value: "profit" },
   ];
 
   return (

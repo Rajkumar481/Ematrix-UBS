@@ -42,10 +42,10 @@ export const createSales = async (req, res) => {
       const qty = Number(quantity) || 0;
 
       console.log(
-        `Checking stock for ${productName}: available=${purchase.quantity}, requested=${qty}`
+        `Checking stock for ${productName}: available=${purchase.salesQuantity}, requested=${qty}`
       );
 
-      if (purchase.quantity < qty) {
+      if (purchase.salesQuantity < qty) {
         return res.status(400).json({
           message: `Insufficient stock for product '${productName}'`,
         });
@@ -56,18 +56,18 @@ export const createSales = async (req, res) => {
       const totalAmount = total + gstAmount;
       const profit = (purchase.sellingPrice - purchase.purchasePrice) * qty;
 
-      // Update product stock
-      purchase.quantity -= qty;
+      // ✅ Update remaining stock by decreasing salesQuantity instead of quantity
+      purchase.salesQuantity -= qty;
       await purchase.save();
 
       items.push({
         purchaseId: purchase._id,
         productName,
         quantity: qty,
-        gstAmount,
-        total,
-        totalAmount,
-        profit,
+        gstAmount: gstAmount.toFixed(2),
+        total: total.toFixed(2),
+        totalAmount: totalAmount.toFixed(2),
+        profit: profit.toFixed(2),
       });
 
       grandTotal += totalAmount;
@@ -79,7 +79,7 @@ export const createSales = async (req, res) => {
       billingDate,
       dueDate,
       modeOfPayment,
-      grandTotal,
+      grandTotal: grandTotal.toFixed(2),
       items,
     });
 
@@ -90,7 +90,6 @@ export const createSales = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 // GET all sales records with populated user and each item's purchase info
 export const getAllSales = async (req, res) => {
   try {

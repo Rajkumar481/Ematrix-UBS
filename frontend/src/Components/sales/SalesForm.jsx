@@ -106,7 +106,9 @@ const SalesForm = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
         {/* User Form */}
         <form className="bg-white p-6 rounded shadow space-y-4">
-          <h2 className="text-xl font-semibold">User Details</h2>
+          <h2 className="text-xl font-bold" style={{ fontSize: "30px" }}>
+            User Details
+          </h2>
 
           <label>Username:</label>
           <input
@@ -152,7 +154,9 @@ const SalesForm = () => {
           onSubmit={handleSubmit}
           className="bg-white p-6 rounded shadow space-y-4"
         >
-          <h2 className="text-xl font-semibold">Order Details</h2>
+          <h2 className="text-xl  font-semibold" style={{ fontSize: "30px" }}>
+            Order Details
+          </h2>
 
           <label>Order ID:</label>
           <input

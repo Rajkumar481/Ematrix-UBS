@@ -78,22 +78,25 @@ const PurchaseSchema = new mongoose.Schema(
     salesQuantity: {
       type: String,
       required: true,
+      default: function () {
+        return this.quantity?.toString() || "0";
+      },
     },
   },
   { timestamps: true }
 );
 
-PurchaseSchema.pre("save", function (next) {
-  const { quantity = 0, purchasePrice = 0, gst = 0, sellingPrice = 0 } = this;
+// PurchaseSchema.pre("save", function (next) {
+//   const { quantity = 0, purchasePrice = 0, gst = 0, sellingPrice = 0 } = this;
 
-  this.salesQuantity = this.salesQuantity ?? this.quantity;
+//   this.salesQuantity = this.salesQuantity ?? this.quantity;
 
-  this.total = quantity * purchasePrice;
-  this.gstAmount = (this.total * gst) / 100;
-  this.totalAmount = this.total + this.gstAmount;
-  this.profit = (sellingPrice - purchasePrice) * quantity;
+//   this.total = quantity * purchasePrice;
+//   this.gstAmount = (this.total * gst) / 100;
+//   this.totalAmount = this.total + this.gstAmount;
+//   this.profit = (sellingPrice - purchasePrice) * quantity;
 
-  next();
-});
+//   next();
+// });
 
 export default mongoose.model("Purchase", PurchaseSchema);

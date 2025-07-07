@@ -15,7 +15,14 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-white bg-opacity-60 flex items-center justify-center z-50 overflow-auto">
-      <div className="bg-white p-6 rounded-lg shadow-xl w-[900px] max-w-full relative text-sm mt-80 field-sizing-fixed ">
+      <div
+        className="bg-white p-6 rounded-lg shadow-xl w-[14.8cm] max-w-full relative text-sm mt-80"
+        style={{
+          minHeight: "21cm", // A5 height
+          fontFamily: "Segoe UI, Arial, sans-serif",
+          fontSize: "12px",
+        }}
+      >
         <button
           className="absolute top-2 right-4 text-xl font-bold text-red-900"
           onClick={onClose}
@@ -24,21 +31,8 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
         </button>
 
         <h2 className="text-xl font-bold text-center mb-2">Tax Invoice</h2>
-        <p className="text-xs text-right mb-1">e-Invoice</p>
 
-        <div className="text-xs mb-4">
-          <p>
-            <strong>IRN:</strong> fef1df90406b928db26a62f816debc9bbb5256d9375e6
-          </p>
-          <p>
-            <strong>Ack No:</strong> 11201003653310
-          </p>
-          <p>
-            <strong>Ack Date:</strong> 21-Dec-20
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 text-xs border border-black p-4 mb-2 lh-md">
+        <div className="grid grid-cols-2 gap-4 text-xs border border-black p-4 mb-2">
           <div className="space-y-4">
             <h3 className="font-semibold mb-4">Buyer Details</h3>
             <p>
@@ -57,7 +51,7 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
 
           <div className="grid grid-cols-2 gap-2 mt-4">
             <p>
-              <strong>quantity</strong>
+              <strong>Quantity</strong>
             </p>
             <p>{product.quantity}</p>
             <p>
@@ -83,23 +77,6 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
           </div>
         </div>
 
-        {/* <div className="grid grid-cols-2 gap-4 text-xs border border-black p-4 mb-4">
-          <div>
-            <strong>Consignee (Ship to)</strong>
-            <p>{buyer.companyName}</p>
-            <p>{buyer.address}</p>
-            <p>GSTIN/UIN: {buyer.gstin || '29AAFC8126N1ZZ'}</p>
-            <p>State Name: Karnataka, Code: 29</p>
-          </div>
-          <div>
-            <strong>Buyer (Bill to)</strong>
-            <p>{buyer.companyName}</p>
-            <p>{buyer.address}</p>
-            <p>GSTIN/UIN: {buyer.gstin || '29AAFC8126N1ZZ'}</p>
-            <p>State Name: Karnataka, Code: 29</p>
-          </div>
-        </div> */}
-
         <table className="w-full border border-black text-xs mb-2">
           <thead className="bg-gray-100">
             <tr>
@@ -124,16 +101,11 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
             </tr>
             <tr>
               <td colSpan="5" className="border p-1 text-right font-semibold">
-                CGST
+                GST
               </td>
               <td className="border p-1 text-right">₹{product.gstAmount}</td>
             </tr>
-            <tr>
-              <td colSpan="5" className="border p-1 text-right font-semibold">
-                SGST
-              </td>
-              <td className="border p-1 text-right">₹{product.gstAmount}</td>
-            </tr>
+
             <tr>
               <td colSpan="5" className="border p-1 text-right font-bold">
                 Total
@@ -159,10 +131,9 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
               <tr>
                 <th className="border p-1">HSN/SAC</th>
                 <th className="border p-1">Taxable Value</th>
-                <th className="border p-1">Central Tax (Rate)</th>
-                <th className="border p-1">Central Tax (Amt)</th>
-                <th className="border p-1">State Tax (Rate)</th>
-                <th className="border p-1">State Tax (Amt)</th>
+
+                <th className="border p-1"> Tax (Rate)</th>
+                <th className="border p-1"> Tax (Amt)</th>
                 <th className="border p-1">Total Tax</th>
               </tr>
             </thead>
@@ -170,8 +141,7 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
               <tr>
                 <td className="border p-1">{product.hsnCode}</td>
                 <td className="border p-1">₹{product.total}</td>
-                <td className="border p-1">{product.gst}%</td>
-                <td className="border p-1">₹{product.gstAmount}</td>
+
                 <td className="border p-1">{product.gst}%</td>
                 <td className="border p-1">₹{product.gstAmount}</td>
                 <td className="border p-1">₹{product.gstAmount * 2}</td>
@@ -198,14 +168,12 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
           </p>
         </div>
 
-        <p className="text-right mt-4 font-semibold">
-          for Surabhi Hardwares, Bangalore
-        </p>
         <p className="text-right text-xs">Authorised Signatory</p>
 
+        {/* ✅ Buttons */}
         <div className="flex justify-end gap-4 mt-6">
           <button
-            onClick={() => navigate(-1)}
+            onClick={onClose}
             className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 text-sm"
           >
             Back
@@ -215,12 +183,6 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
           >
             Print
-          </button>
-          <button
-            onClick={() => alert("Submitted!")}
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm"
-          >
-            Submit
           </button>
         </div>
       </div>

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { FaTrash } from "react-icons/fa";
 
 const ProfitForm = () => {
   const [rows, setRows] = useState([]);
@@ -36,15 +35,6 @@ const ProfitForm = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`http://localhost:3000/sales/${id}`);
-      setRows((prev) => prev.filter((r) => r.id !== id));
-    } catch (err) {
-      console.error("Delete failed:", err);
-    }
-  };
-
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
@@ -63,6 +53,11 @@ const ProfitForm = () => {
 
     return matchesCompany && matchesDate;
   });
+
+  const grandTotalProfit = filteredRows.reduce(
+    (sum, row) => sum + parseFloat(row.profit || 0),
+    0
+  );
 
   return (
     <div className="bg-white p-6 rounded-md shadow-md w-full max-w-6xl mx-auto mt-8">
@@ -120,7 +115,6 @@ const ProfitForm = () => {
             <th className="border px-4 py-2">Quantity</th>
             <th className="border px-4 py-2">Profit</th>
             <th className="border px-4 py-2">Billing Date</th>
-            <th className="border px-4 py-2">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -131,25 +125,29 @@ const ProfitForm = () => {
               <td className="border px-4 py-2">{row.quantity}</td>
               <td className="border px-4 py-2">{row.profit}</td>
               <td className="border px-4 py-2">{row.billingDate}</td>
-              <td className="border px-4 py-2 text-center">
-                <button
-                  className="text-red-600 hover:text-red-800"
-                  onClick={() => handleDelete(row.id)}
-                >
-                  <FaTrash />
-                </button>
-              </td>
             </tr>
           ))}
           {filteredRows.length === 0 && (
             <tr>
-              <td colSpan="6" className="text-center py-4">
+              <td colSpan="5" className="text-center py-4">
                 No matching records found.
               </td>
             </tr>
           )}
         </tbody>
       </table>
+
+      {/* Grand Total section below table */}
+      <div className="flex justify-end mt-4">
+        <div className="text-right">
+          <p className="text-lg font-semibold">
+            Grand Total Profit:{" "}
+            <span className="text-green-600">
+              ₹{grandTotalProfit.toFixed(2)}
+            </span>
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
