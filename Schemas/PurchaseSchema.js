@@ -11,20 +11,15 @@ const PurchaseSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    productName: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    despatchedThrough: {
-      type: String,
-      required: true,
-    },
     billingDate: {
       type: String,
       required: true,
     },
     deliveryDate: {
+      type: String,
+      required: true,
+    },
+    despatchedThrough: {
       type: String,
       required: true,
     },
@@ -39,64 +34,73 @@ const PurchaseSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    hsnCode: {
-      type: String,
-      required: true,
-    },
-    quantity: {
-      type: String,
-      required: true,
-    },
-    purchasePrice: {
-      type: String,
-      required: true,
-    },
-    sellingPrice: {
-      type: String,
-      required: true,
-    },
-    gst: {
-      type: String,
-      required: true,
-    },
-    gstAmount: {
-      type: String,
-      required: true,
-    },
-    total: {
-      type: String,
-      required: true,
-    },
-    totalAmount: {
-      type: String,
-      required: true,
-    },
-    profit: {
-      type: String,
-      required: true,
-    },
-    salesQuantity: {
-      type: String,
-      required: true,
-      default: function () {
-        return this.quantity?.toString() || "0";
+
+    items: [
+      {
+        productName: {
+          type: String,
+          required: true,
+        },
+        hsnCode: {
+          type: String,
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+        },
+        purchasePrice: {
+          type: Number,
+          required: true,
+        },
+        sellingPrice: {
+          type: Number,
+          required: true,
+        },
+        gst: {
+          type: Number,
+          required: true,
+        },
+        gstAmount: {
+          type: Number,
+        },
+        total: {
+          type: Number,
+        },
+        totalAmount: {
+          type: Number,
+        },
+        profit: {
+          type: Number,
+        },
       },
-    },
+    ],
   },
   { timestamps: true }
 );
 
-// PurchaseSchema.pre("save", function (next) {
-//   const { quantity = 0, purchasePrice = 0, gst = 0, sellingPrice = 0 } = this;
+PurchaseSchema.pre("save", function (next) {
+  this.items = this.items.map((item) => {
+    const quantity = parseFloat(item.quantity) || 0;
+    const purchasePrice = parseFloat(item.purchasePrice) || 0;
+    const sellingPrice = parseFloat(item.sellingPrice) || 0;
+    const gst = parseFloat(item.gst) || 0;
 
-//   this.salesQuantity = this.salesQuantity ?? this.quantity;
+    const total = quantity * purchasePrice;
+    const gstAmount = (total * gst) / 100;
+    const totalAmount = total + gstAmount;
+    const profit = (sellingPrice - purchasePrice) * quantity;
 
-//   this.total = quantity * purchasePrice;
-//   this.gstAmount = (this.total * gst) / 100;
-//   this.totalAmount = this.total + this.gstAmount;
-//   this.profit = (sellingPrice - purchasePrice) * quantity;
+    return {
+      ...item,
+      total: parseFloat(total.toFixed(2)),
+      gstAmount: parseFloat(gstAmount.toFixed(2)),
+      totalAmount: parseFloat(totalAmount.toFixed(2)),
+      profit: parseFloat(profit.toFixed(2)),
+    };
+  });
 
-//   next();
-// });
+  next();
+});
 
 export default mongoose.model("Purchase", PurchaseSchema);

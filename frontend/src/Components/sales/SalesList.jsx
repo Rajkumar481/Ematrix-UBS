@@ -10,24 +10,20 @@ export default function SalesList() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSale, setEditingSale] = useState(null);
 
-  // Filters
   const [searchProduct, setSearchProduct] = useState("");
-  const [searchUsername, setSearchUsername] = useState("");
-  const [startDate, setStartDate] = useState(() => {
-    const today = new Date().toISOString().split("T")[0];
-    return today;
-  });
-  const [endDate, setEndDate] = useState(() => {
-    const today = new Date().toISOString().split("T")[0];
-    return today;
-  });
+  const [searchCompany, setSearchCompany] = useState("");
+  const [startDate, setStartDate] = useState(
+    () => new Date().toISOString().split("T")[0]
+  );
+  const [endDate, setEndDate] = useState(
+    () => new Date().toISOString().split("T")[0]
+  );
 
   const fetchSales = async () => {
     try {
       const response = await axios.get("http://localhost:3000/sales");
       setSalesData(response.data);
       setFilteredData(response.data);
-      console.log(response.data);
     } catch (error) {
       console.error("Error fetching sales data:", error);
       alert("Failed to fetch sales data. Please try again.");
@@ -39,32 +35,25 @@ export default function SalesList() {
   useEffect(() => {
     fetchSales();
   }, []);
-
   useEffect(() => {
     applyFilters();
-  }, [searchProduct, searchUsername, startDate, endDate, salesData]);
+  }, [searchProduct, searchCompany, startDate, endDate, salesData]);
 
   const applyFilters = () => {
     const filtered = salesData.filter((item) => {
+      const { items, userId, createdAt } = item;
       const productMatch = searchProduct
-        ? item.items.some((it) =>
+        ? items?.some((it) =>
             it.productName.toLowerCase().includes(searchProduct.toLowerCase())
           )
         : true;
-
-      const usernameMatch = searchUsername
-        ? item.userId?.userName
-            ?.toLowerCase()
-            .includes(searchUsername.toLowerCase())
+      const companyMatch = searchCompany
+        ? userId?.userName?.toLowerCase().includes(searchCompany.toLowerCase())
         : true;
-
-      const createdAtDate = new Date(item.createdAt)
-        .toISOString()
-        .split("T")[0];
-      const afterStart = startDate ? createdAtDate >= startDate : true;
-      const beforeEnd = endDate ? createdAtDate <= endDate : true;
-
-      return productMatch && usernameMatch && afterStart && beforeEnd;
+      const createdDate = new Date(createdAt).toISOString().split("T")[0];
+      const afterStart = startDate ? createdDate >= startDate : true;
+      const beforeEnd = endDate ? createdDate <= endDate : true;
+      return productMatch && companyMatch && afterStart && beforeEnd;
     });
     setFilteredData(filtered);
   };
@@ -74,10 +63,8 @@ export default function SalesList() {
     if (sale) {
       setEditingSale({
         ...sale,
-        quantity: sale.quantity?.toString() || "",
         billingDate: sale.billingDate,
-        dueDate: sale.dueDate,
-        modeOfPayment: sale.modeOfPayment || "Cash",
+        deliveryDate: sale.deliveryDate,
       });
       setIsModalOpen(true);
     }
@@ -86,10 +73,8 @@ export default function SalesList() {
   const handleModalSave = async () => {
     try {
       const updatedSale = {
-        quantity: editingSale.quantity,
         billingDate: editingSale.billingDate,
-        dueDate: editingSale.dueDate,
-        modeOfPayment: editingSale.modeOfPayment,
+        deliveryDate: editingSale.deliveryDate,
       };
       const response = await axios.patch(
         `http://localhost:3000/sales/${editingSale._id}`,
@@ -117,13 +102,25 @@ export default function SalesList() {
     }
   };
 
+  const handlePurchaseClick = async (purchaseId) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:3000/purchase/${purchaseId}`
+      );
+      console.log("Purchase details:", response.data);
+      alert(`Purchase details fetched! Check console.`);
+    } catch (error) {
+      console.error("Error fetching purchase details:", error);
+      alert("Failed to fetch purchase details. Please try again.");
+    }
+  };
+
   return (
     <div className="w-full max-w-6xl mx-auto p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Sales</h1>
       </div>
 
-      {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <label className="text-sm text-gray-700">Product Name</label>
@@ -136,13 +133,13 @@ export default function SalesList() {
           />
         </div>
         <div>
-          <label className="text-sm text-gray-700">Username</label>
+          <label className="text-sm text-gray-700">Company Name</label>
           <input
             type="text"
-            value={searchUsername}
-            onChange={(e) => setSearchUsername(e.target.value)}
+            value={searchCompany}
+            onChange={(e) => setSearchCompany(e.target.value)}
             className="mt-1 w-full border-gray-300 rounded-md shadow-sm"
-            placeholder="Search by username"
+            placeholder="Search by company"
           />
         </div>
         <div>
@@ -165,8 +162,7 @@ export default function SalesList() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-lg shadow-lg border border-grey-200 overflow-hidden">
+      <div className="bg-white rounded-lg shadow-lg border overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
@@ -177,13 +173,16 @@ export default function SalesList() {
                 Product Name
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Username
+                Company Name
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Quantity
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Total Amount
+                Grand Total
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Purchase ID
               </th>
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -191,77 +190,74 @@ export default function SalesList() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredData.map((item, index) => (
-              <tr
-                key={item._id}
-                className="hover:bg-gray-50 transition-colors duration-200"
-                onClick={() => navigate(`/sales/${item._id}`)}
-              >
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {index + 1}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {item.items?.map((i) => i.productName).join(", ") || "N/A"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                  {item.userId?.userName || "N/A"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                  {item.items?.reduce((sum, i) => sum + i.quantity, 0) || 0}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700">
-                  {(Number(item.grandTotal) || 0).toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
-                  <div className="flex items-center justify-center gap-3">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit(item._id);
-                      }}
-                      className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 p-2 rounded-full transition-all duration-200"
-                      title="Edit"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+            {filteredData.map((item, index) => {
+              const { _id, items, userId, grandTotal } = item;
+              const totalQuantity = items?.reduce(
+                (sum, i) => sum + i.quantity,
+                0
+              );
+
+              return (
+                <tr
+                  key={_id}
+                  className="hover:bg-gray-50 transition-colors duration-200"
+                  onClick={() => navigate(`/sales/${_id}`)}
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {index + 1}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {items?.map((i) => i.productName).join(", ") || "N/A"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    {userId?.userName || "N/A"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    {totalQuantity || 0}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700">
+                    {grandTotal}
+                  </td>
+                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 underline cursor-pointer">
+                    {items?.map((i) => (
+                      <div
+                        key={i.purchaseId?._id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePurchaseClick(i.purchaseId?._id);
+                        }}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                        />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(item._id);
-                      }}
-                      className="text-red-600 hover:text-red-800 hover:bg-red-100 p-2 rounded-full transition-all duration-200"
-                      title="Delete"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                        {i.purchaseId?._id || "N/A"}
+                      </div>
+                    ))}
+                  </td> */}
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <div className="flex items-center justify-center gap-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(_id);
+                        }}
+                        className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 p-2 rounded-full transition-all duration-200"
+                        title="Edit"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                        ✏️
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(_id);
+                        }}
+                        className="text-red-600 hover:text-red-800 hover:bg-red-100 p-2 rounded-full transition-all duration-200"
+                        title="Delete"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -271,14 +267,12 @@ export default function SalesList() {
           <p className="text-gray-500 text-lg">Loading sales data...</p>
         </div>
       )}
-
       {!loading && filteredData.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">No sales data available</p>
         </div>
       )}
 
-      {/* Modal */}
       {isModalOpen && editingSale && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg relative">
@@ -290,19 +284,6 @@ export default function SalesList() {
             </button>
             <h2 className="text-xl font-bold mb-4">Edit Sale</h2>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Quantity
-                </label>
-                <input
-                  type="number"
-                  value={editingSale.quantity}
-                  onChange={(e) =>
-                    setEditingSale({ ...editingSale, quantity: e.target.value })
-                  }
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   Billing Date
@@ -321,34 +302,19 @@ export default function SalesList() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Due Date
+                  Delivery Date
                 </label>
                 <input
                   type="date"
-                  value={editingSale.dueDate}
-                  onChange={(e) =>
-                    setEditingSale({ ...editingSale, dueDate: e.target.value })
-                  }
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Mode of Payment
-                </label>
-                <select
-                  value={editingSale.modeOfPayment}
+                  value={editingSale.deliveryDate}
                   onChange={(e) =>
                     setEditingSale({
                       ...editingSale,
-                      modeOfPayment: e.target.value,
+                      deliveryDate: e.target.value,
                     })
                   }
                   className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="Cash">Cash</option>
-                  <option value="Credit">Credit</option>
-                </select>
+                />
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">

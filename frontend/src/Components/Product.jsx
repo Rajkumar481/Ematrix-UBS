@@ -1,4 +1,3 @@
-// src/components/Product.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaEdit, FaTrash } from "react-icons/fa";
@@ -19,21 +18,26 @@ const Product = () => {
     try {
       const response = await axios.get("http://localhost:3000/purchase");
       setUserData(response.data);
+      console.log("Data fetched successfully", response.data);
     } catch (error) {
       console.error(error);
       toast.error("Failed to fetch products");
     }
   };
 
-  const handleDelete = async (item) => {
+  const handleDelete = async (purchase) => {
     try {
-      await axios.delete(`http://localhost:3000/purchase/${item._id}`);
+      await axios.delete(`http://localhost:3000/purchase/${purchase._id}`);
       toast.success("Deleted successfully");
       fetchData();
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete");
     }
+  };
+
+  const sumItemsField = (items, key) => {
+    return items?.reduce((acc, item) => acc + Number(item[key] || 0), 0);
   };
 
   return (
@@ -53,7 +57,7 @@ const Product = () => {
           <tr className="bg-gray-100 text-center">
             <th className="px-4 py-2 border">S.No</th>
             <th className="px-4 py-2 border">Company Name</th>
-            <th className="px-4 py-2 border">Product Name</th>
+            <th className="px-4 py-2 border">Product Name(s)</th>
             <th className="px-4 py-2 border">GST Amount</th>
             <th className="px-4 py-2 border">Total</th>
             <th className="px-4 py-2 border">Total Amount</th>
@@ -64,42 +68,51 @@ const Product = () => {
         <tbody>
           {userdata.length === 0 ? (
             <tr>
-              <td colSpan="13" className="text-center py-4 text-gray-500">
+              <td colSpan="8" className="text-center py-4 text-gray-500">
                 No products found.
               </td>
             </tr>
           ) : (
-            userdata.map((item, index) => (
+            userdata.map((purchase, index) => (
               <tr
-                key={item._id}
+                key={purchase._id}
                 className="text-center border-t cursor-pointer hover:bg-gray-100"
-                onClick={() => setSelectedProduct(item)}
+                onClick={() => setSelectedProduct(purchase)} // opens invoice modal
               >
                 <td className="px-4 py-2 border">{index + 1}</td>
                 <td className="px-4 py-2 border">
-                  {item.purchaseId?.companyName}
+                  {purchase.purchaseId?.companyName || "N/A"}
                 </td>
-                <td className="px-4 py-2 border">{item.productName}</td>
-                <td className="px-4 py-2 border">{item.gstAmount}</td>
-                <td className="px-4 py-2 border">{item.total}</td>
-                <td className="px-4 py-2 border">{item.totalAmount}</td>
-                <td className="px-4 py-2 border">{item.profit}</td>
                 <td className="px-4 py-2 border">
-                  <div className="flex items-center justify-center space-x-3">
+                  {purchase.items?.map((item) => item.productName).join(", ")}
+                </td>
+                <td className="px-4 py-2 border">
+                  {sumItemsField(purchase.items, "gstAmount")}
+                </td>
+                <td className="px-4 py-2 border">
+                  {sumItemsField(purchase.items, "total")}
+                </td>
+                <td className="px-4 py-2 border">
+                  {sumItemsField(purchase.items, "totalAmount")}
+                </td>
+                <td className="px-4 py-2 border">
+                  {sumItemsField(purchase.items, "profit")}
+                </td>
+                <td className="px-4 py-2 border">
+                  <div
+                    className="flex items-center justify-center space-x-3"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/edit/add-product/${item._id}`);
-                      }}
+                      onClick={() =>
+                        navigate(`/edit/add-product/${purchase._id}`)
+                      }
                       className="text-blue-500 hover:text-blue-700"
                     >
                       <FaEdit />
                     </button>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(item);
-                      }}
+                      onClick={() => handleDelete(purchase)}
                       className="text-red-500 hover:text-red-700"
                     >
                       <FaTrash />
@@ -112,11 +125,13 @@ const Product = () => {
         </tbody>
       </table>
 
-      <InvoiceModal
-        product={selectedProduct}
-        buyer={selectedProduct?.purchaseId}
-        onClose={() => setSelectedProduct(null)}
-      />
+      {selectedProduct && (
+        <InvoiceModal
+          product={selectedProduct}
+          buyer={selectedProduct?.purchaseId}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </div>
   );
 };

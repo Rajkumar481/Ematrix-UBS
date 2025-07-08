@@ -17,7 +17,15 @@ const Salescalculation = ({ onChange, onSubmit, reset }) => {
   useEffect(() => {
     axios
       .get("http://localhost:3000/purchase")
-      .then((res) => setProductList(res.data))
+      .then((res) => {
+        const flattenedProducts = res.data.flatMap((purchase) =>
+          (purchase.items || []).map((item) => ({
+            ...item,
+            purchaseId: purchase._id, // attach purchase id for your sales payload
+          }))
+        );
+        setProductList(flattenedProducts);
+      })
       .catch((err) => console.error("Error loading products:", err));
   }, []);
 
@@ -38,53 +46,64 @@ const Salescalculation = ({ onChange, onSubmit, reset }) => {
   }, [reset, onChange]);
 
   const handleChange = (index, name, value) => {
-    setProductRows((prev) =>
-      prev.map((row, i) => {
-        if (i !== index) return row;
+    const safeValue = value ?? "";
 
-        let updatedRow = { ...row, [name]: value };
+    const updatedRows = productRows.map((row, i) => {
+      if (i !== index) return row;
 
-        if (name === "productName") {
-          const selected = productList.find(
-            (p) =>
-              p.productName.trim().toLowerCase() === value.trim().toLowerCase()
-          );
-          if (selected) {
-            updatedRow = {
-              ...updatedRow,
-              productName: selected.productName,
-              hsn: selected.hsnCode,
-              rate: selected.sellingPrice,
-              gst: selected.gst,
-              purchaseId: selected._id,
-            };
-          }
-        }
+      let updatedRow = { ...row, [name]: safeValue };
 
-        return updatedRow;
-      })
-    );
+      if (name === "productName") {
+        updatedRow.productName = safeValue; // set typed value
 
-    if (name === "quantity") {
-      if (index === productRows.length - 1) {
-        setProductRows((prev) => [
-          ...prev,
-          {
-            productName: "",
+        const selected = productList.find(
+          (p) =>
+            (p.productName ?? "").trim().toLowerCase() ===
+            safeValue.trim().toLowerCase()
+        );
+
+        if (selected) {
+          updatedRow = {
+            ...updatedRow,
+            purchaseId: selected.purchaseId,
+            productName: selected.productName,
+            hsn: selected.hsnCode,
+            rate: selected.sellingPrice,
+            gst: selected.gst,
+          };
+        } else {
+          updatedRow = {
+            ...updatedRow,
             hsn: "",
             rate: "",
             gst: "",
-            quantity: "",
             purchaseId: "",
-          },
-        ]);
+          };
+        }
       }
+
+      return updatedRow;
+    });
+
+    setProductRows(updatedRows);
+
+    if (name === "quantity" && index === productRows.length - 1) {
+      setProductRows((prev) => [
+        ...updatedRows,
+        {
+          productName: "",
+          hsn: "",
+          rate: "",
+          gst: "",
+          quantity: "",
+          purchaseId: "",
+        },
+      ]);
     }
 
-    const updatedProducts = productRows
-      .map((row, i) => (i === index ? { ...row, [name]: value } : row))
-      .filter((p) => p.purchaseId && p.quantity);
-
+    const updatedProducts = updatedRows.filter(
+      (p) => p.purchaseId && p.quantity
+    );
     onChange(updatedProducts);
   };
 

@@ -1,3 +1,4 @@
+import PurchaseSchema from "../../Schemas/PurchaseSchema.js";
 import Purchase from "../../Schemas/PurchaseSchema.js";
 import Sales from "../../Schemas/Sales/SalesSchema.js";
 
@@ -10,7 +11,7 @@ export const createSales = async (req, res) => {
       return res.status(400).json({ message: "No sales data provided" });
     }
 
-    // Get common fields from the first item in the payload
+    // Extract common fields from the first item in the payload
     const { userId, orderId, billingDate, dueDate, modeOfPayment } =
       salesArray[0];
 
@@ -31,7 +32,10 @@ export const createSales = async (req, res) => {
         `Processing item: ${productName} - Requested qty: ${quantity}`
       );
 
-      const purchase = await Purchase.findOne({ productName });
+      //  Correct lookup: find Purchase where items.productName matches
+      const purchase = await Purchase.findOne({
+        "items.productName": productName,
+      });
       if (!purchase) {
         console.error(`Product not found: ${productName}`);
         return res.status(404).json({
@@ -39,31 +43,48 @@ export const createSales = async (req, res) => {
         });
       }
 
+      // 🔥 Extract matching item from items array
+      const matchingItem = purchase.items.find(
+        (item) =>
+          item.productName.trim().toLowerCase() ===
+          productName.trim().toLowerCase()
+      );
+
+      if (!matchingItem) {
+        console.error(`Product not found in items: ${productName}`);
+        return res.status(404).json({
+          message: `Product '${productName}' not found in Purchase items`,
+        });
+      }
+
       const qty = Number(quantity) || 0;
 
       console.log(
-        `Checking stock for ${productName}: available=${purchase.salesQuantity}, requested=${qty}`
+        `Checking stock for ${productName}: available=${matchingItem.quantity}, requested=${qty}`
       );
 
-      if (purchase.salesQuantity < qty) {
+      if (matchingItem.quantity < qty) {
         return res.status(400).json({
           message: `Insufficient stock for product '${productName}'`,
         });
       }
 
-      const total = qty * purchase.sellingPrice;
-      const gstAmount = (total * purchase.gst) / 100;
+      const total = qty * matchingItem.sellingPrice;
+      const gstAmount = (total * matchingItem.gst) / 100;
       const totalAmount = total + gstAmount;
-      const profit = (purchase.sellingPrice - purchase.purchasePrice) * qty;
+      const profit =
+        (matchingItem.sellingPrice - matchingItem.purchasePrice) * qty;
 
-      // ✅ Update remaining stock by decreasing salesQuantity instead of quantity
-      purchase.salesQuantity -= qty;
+      // ✅ Update remaining stock inside the matching item
+      matchingItem.quantity -= qty;
       await purchase.save();
 
       items.push({
         purchaseId: purchase._id,
         productName,
         quantity: qty,
+        hsnCode: matchingItem.hsnCode,
+        gst: matchingItem.gst,
         gstAmount: gstAmount.toFixed(2),
         total: total.toFixed(2),
         totalAmount: totalAmount.toFixed(2),
@@ -101,13 +122,19 @@ export const getAllSales = async (req, res) => {
       .populate({
         path: "userId",
         select: "userName email phone address gst",
-      });
+      })
+      .lean()
+      .exec();
+
+    // console.dir(sales, { depth: null, colors: true }); // helpful debug
+
     res.status(200).json(sales);
   } catch (error) {
     console.error("Error in getAllSales:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // GET a single sales record by ID
 export const getSalesById = async (req, res) => {

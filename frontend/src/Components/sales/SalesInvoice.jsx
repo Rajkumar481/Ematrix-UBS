@@ -1,17 +1,51 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 export default function InvoicePage({ sale }) {
+  const [purchases, setPurchases] = useState([]);
+  const [loadingPurchases, setLoadingPurchases] = useState(true);
+
+  useEffect(() => {
+    const fetchPurchases = async () => {
+      try {
+        if (sale?.items?.length) {
+          const fetched = await Promise.all(
+            sale.items.map((item) =>
+              axios
+                .get(`http://localhost:3000/purchase/${item.purchaseId?._id}`)
+                .then((res) => res.data)
+                .catch((err) => {
+                  console.error("Error fetching purchase:", err);
+                  return null;
+                })
+            )
+          );
+          setPurchases(fetched);
+        }
+      } catch (error) {
+        console.error("Error fetching purchases:", error);
+      } finally {
+        setLoadingPurchases(false);
+      }
+    };
+
+    fetchPurchases();
+  }, [sale]);
+
   if (!sale) return <div className="text-center py-10">Loading invoice...</div>;
-  console.log(sale, "from slaes");
+  if (loadingPurchases)
+    return <div className="text-center py-10">Loading purchase details...</div>;
 
   const calculateTotalAmount = () =>
-    sale.items?.reduce(
-      (sum, item) => sum + (item.quantity || 0) * (item.sellingPrice || 0),
-      0
-    ) || 0;
+    sale.items?.reduce((sum, item) => {
+      const purchase = purchases.find((p) => p?._id === item.purchaseId?._id);
+      const rate = purchase?.sellingPrice || 0;
+      return sum + (item.quantity || 0) * rate;
+    }, 0) || 0;
 
   const calculateTotalGST = () =>
-    sale.items?.reduce((sum, item) => sum + (item.gstAmount || 0), 0) || 0;
+    sale.items?.reduce((sum, item) => sum + (Number(item.gstAmount) || 0), 0) ||
+    0;
 
   const grandTotal = calculateTotalAmount() + calculateTotalGST();
 
@@ -19,6 +53,7 @@ export default function InvoicePage({ sale }) {
     <div className="max-w-4xl mx-auto p-8 bg-white shadow rounded">
       <h1 className="text-3xl font-bold mb-6 text-center">Tax Invoice</h1>
 
+      {/* Invoice Metadata */}
       <div className="grid grid-cols-2 gap-4 text-sm mb-6 border-b pb-4">
         <div>
           <p>
@@ -26,10 +61,11 @@ export default function InvoicePage({ sale }) {
           </p>
           <p>
             <span className="font-semibold">Billing Date:</span>{" "}
-            {sale.billingDate}
+            {sale.billingDate || "N/A"}
           </p>
           <p>
-            <span className="font-semibold">Due Date:</span> {sale.dueDate}
+            <span className="font-semibold">Due Date:</span>{" "}
+            {sale.dueDate || "N/A"}
           </p>
           <p>
             <span className="font-semibold">Mode of Payment:</span>{" "}
@@ -44,6 +80,7 @@ export default function InvoicePage({ sale }) {
         </div>
       </div>
 
+      {/* Seller & Buyer Details */}
       <div className="grid grid-cols-2 gap-8 text-sm mb-6 border p-4 rounded">
         <div>
           <h2 className="font-bold mb-2">Seller Details</h2>
@@ -80,6 +117,7 @@ export default function InvoicePage({ sale }) {
         </div>
       </div>
 
+      {/* Items Table */}
       <table className="w-full text-sm border mb-6">
         <thead className="bg-gray-100">
           <tr>
@@ -92,25 +130,30 @@ export default function InvoicePage({ sale }) {
           </tr>
         </thead>
         <tbody>
-          {sale.items?.map((item, idx) => (
-            <tr key={idx}>
-              <td className="border p-2">{idx + 1}</td>
-              <td className="border p-2">{item.productName || "N/A"}</td>
-              <td className="border p-2">
-                {item.purchaseId?.hsnCode || "N/A"}
-              </td>
-              <td className="border p-2 text-right">{item.quantity || 0}</td>
-              <td className="border p-2 text-right">
-                ₹{Number(item.sellingPrice || 0).toFixed(2)}
-              </td>
-              <td className="border p-2 text-right">
-                ₹{((item.quantity || 0) * (item.sellingPrice || 0)).toFixed(2)}
-              </td>
-            </tr>
-          ))}
+          {sale.items?.map((item, idx) => {
+            const purchase = purchases.find(
+              (p) => p?._id === item.purchaseId?._id
+            );
+            const hsn = purchase?.hsnCode || "N/A";
+            const rate = purchase?.sellingPrice || 0;
+            const qty = item.quantity || 0;
+            const amount = qty * rate;
+
+            return (
+              <tr key={idx}>
+                <td className="border p-2">{idx + 1}</td>
+                <td className="border p-2">{item.productName || "N/A"}</td>
+                <td className="border p-2">{hsn}</td>
+                <td className="border p-2 text-right">{qty}</td>
+                <td className="border p-2 text-right">₹{rate.toFixed(2)}</td>
+                <td className="border p-2 text-right">₹{amount.toFixed(2)}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
+      {/* Totals */}
       <div className="flex justify-end text-sm border p-4 rounded mb-4">
         <div className="w-64">
           <div className="flex justify-between mb-2">
@@ -130,7 +173,7 @@ export default function InvoicePage({ sale }) {
       </div>
 
       <p className="text-xs text-gray-600 italic mt-4">
-        Amount Chargeable (in words): Rupees Zero Only
+        Amount Chargeable (in words): Rupees One Hundred Eight Only
       </p>
     </div>
   );

@@ -4,6 +4,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 
+const getToday = () => new Date().toISOString().substring(0, 10);
+
 const AddProduct = ({ setActiveComponent }) => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -19,7 +21,7 @@ const AddProduct = ({ setActiveComponent }) => {
 
   const [formDetails, setFormDetails] = useState({
     invoiceNo: "",
-    billingDate: "",
+    billingDate: getToday(),
     deliveryDate: "",
     vehicleNo: "",
     driverPhoneNo: "",
@@ -45,15 +47,6 @@ const AddProduct = ({ setActiveComponent }) => {
   }, []);
 
   useEffect(() => {
-    // Set billing date to today by default in create mode
-    if (!id && buyers.length > 0) {
-      const today = new Date().toISOString().split("T")[0];
-      setFormDetails((prev) => ({
-        ...prev,
-        billingDate: today,
-      }));
-    }
-
     if (!id || buyers.length === 0) return;
 
     axios
@@ -72,23 +65,34 @@ const AddProduct = ({ setActiveComponent }) => {
 
         setFormDetails({
           invoiceNo: data.invoiceNo || "",
-          billingDate: data.billingDate?.substring(0, 10) || "",
+          billingDate: getToday(), // Force today's date
           deliveryDate: data.deliveryDate?.substring(0, 10) || "",
           vehicleNo: data.vehicleNo || "",
           driverPhoneNo: data.driverPhoneNo || "",
           purchaseOrderId: data.purchaseOrderId || "",
         });
 
-        setProductRows([
-          {
-            productName: data.productName || "",
-            hsnCode: data.hsnCode || "",
-            quantity: data.quantity || "",
-            purchasePrice: data.purchasePrice || "",
-            sellingPrice: data.sellingPrice || "",
-            gst: data.gst || "",
-          },
-        ]);
+        setProductRows(
+          data.items?.length
+            ? data.items.map((item) => ({
+                productName: item.productName,
+                hsnCode: item.hsnCode,
+                quantity: item.quantity,
+                purchasePrice: item.purchasePrice,
+                sellingPrice: item.sellingPrice,
+                gst: item.gst,
+              }))
+            : [
+                {
+                  productName: "",
+                  hsnCode: "",
+                  quantity: "",
+                  purchasePrice: "",
+                  sellingPrice: "",
+                  gst: "",
+                },
+              ]
+        );
       })
       .catch((err) => console.error("Failed to fetch product", err));
   }, [id, buyers]);
@@ -167,41 +171,40 @@ const AddProduct = ({ setActiveComponent }) => {
 
   const handleSubmit = async () => {
     try {
-      for (const product of productRows) {
+      const items = productRows.map((product) => {
         const { gstAmount, total, totalAmount, profit } = calculate(product);
-
-        const payload = {
-          purchaseId: companyData.purchaseId,
-
-          invoiceNo: formDetails.invoiceNo,
+        return {
           productName: product.productName,
-          despatchedThrough: "lorry",
-          billingDate: new String(formDetails.billingDate),
-          deliveryDate: new String(formDetails.deliveryDate),
-
-          vehicleNo: String(formDetails.vehicleNo),
-          driverPhoneNo: String(formDetails.driverPhoneNo),
-          purchaseOrderId: String(formDetails.purchaseOrderId),
-
-          hsnCode: String(product.hsnCode),
-          quantity: String(product.quantity),
-          purchasePrice: String(product.purchasePrice),
-          sellingPrice: String(product.sellingPrice),
-          gst: String(product.gst),
-
-          total,
+          hsnCode: product.hsnCode,
+          quantity: parseFloat(product.quantity),
+          purchasePrice: parseFloat(product.purchasePrice),
+          sellingPrice: parseFloat(product.sellingPrice),
+          gst: parseFloat(product.gst),
           gstAmount,
+          total,
           totalAmount,
           profit,
         };
+      });
 
-        console.log("Sending payload:", payload);
+      const payload = {
+        purchaseId: companyData.purchaseId,
+        invoiceNo: formDetails.invoiceNo,
+        billingDate: getToday(),
+        deliveryDate: formDetails.deliveryDate,
+        despatchedThrough: "lorry",
+        vehicleNo: formDetails.vehicleNo,
+        driverPhoneNo: formDetails.driverPhoneNo,
+        purchaseOrderId: formDetails.purchaseOrderId,
+        items,
+      };
 
-        if (id) {
-          await axios.patch(`http://localhost:3000/purchase/${id}`, payload);
-        } else {
-          await axios.post("http://localhost:3000/purchase", payload);
-        }
+      console.log("Sending full payload:", payload);
+
+      if (id) {
+        await axios.patch(`http://localhost:3000/purchase/${id}`, payload);
+      } else {
+        await axios.post("http://localhost:3000/purchase", payload);
       }
 
       alert(
@@ -217,9 +220,6 @@ const AddProduct = ({ setActiveComponent }) => {
     }
   };
 
-  const today = new Date().toISOString().split("T")[0];
-  const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
-
   return (
     <div className="bg-white p-6 rounded shadow-lg max-w-5xl mx-auto mt-6">
       <h2 className="text-2xl font-bold mb-6">
@@ -227,12 +227,15 @@ const AddProduct = ({ setActiveComponent }) => {
       </h2>
       <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-5">
+          {/* Company fields */}
           <div>
             <label className="block text-sm font-medium">Company Name</label>
             <input
               required
               type="text"
-              value={companyData.companyName}
+              value={
+                companyData.companyName || companyData.purchaseId.companyName
+              }
               onChange={handleCompanyChange}
               className="w-full px-2 py-1 border rounded text-sm"
               placeholder="Enter or select company name"
@@ -249,7 +252,7 @@ const AddProduct = ({ setActiveComponent }) => {
             <input
               required
               type="email"
-              value={companyData.email}
+              value={companyData.email || companyData.purchaseId.email}
               onChange={(e) =>
                 setCompanyData((prev) => ({ ...prev, email: e.target.value }))
               }
@@ -261,7 +264,7 @@ const AddProduct = ({ setActiveComponent }) => {
             <input
               required
               type="tel"
-              value={companyData.phone}
+              value={companyData.phone || companyData.purchaseId.phone}
               onChange={(e) =>
                 setCompanyData((prev) => ({ ...prev, phone: e.target.value }))
               }
@@ -272,9 +275,12 @@ const AddProduct = ({ setActiveComponent }) => {
             <label className="block text-sm font-medium">Address</label>
             <input
               required
-              value={companyData.address}
+              value={companyData.address || companyData.purchaseId.address}
               onChange={(e) =>
-                setCompanyData((prev) => ({ ...prev, address: e.target.value }))
+                setCompanyData((prev) => ({
+                  ...prev,
+                  address: e.target.value,
+                }))
               }
               className="w-full px-2 py-1 border rounded text-sm"
             />
@@ -296,61 +302,48 @@ const AddProduct = ({ setActiveComponent }) => {
         </div>
 
         <div className="space-y-5">
-          {[
-            "Billing Date",
-            "Delivery Date",
-            "Vehicle No",
-            "Driver No",
-            "Purchase ID",
-          ].map((label, i) => (
-            <div key={i}>
-              <label className="block text-sm font-medium">{label}</label>
-              <input
-                required
-                type={label.includes("Date") ? "date" : "text"}
-                min={
-                  label === "Billing Date"
-                    ? today
-                    : label === "Delivery Date"
-                    ? tomorrow
-                    : undefined
-                }
-                className="w-full px-2 py-1 border rounded text-sm"
-                value={
-                  formDetails[
-                    label === "Billing Date"
-                      ? "billingDate"
-                      : label === "Delivery Date"
-                      ? "deliveryDate"
-                      : label === "Vehicle No"
-                      ? "vehicleNo"
-                      : label === "Driver No"
-                      ? "driverPhoneNo"
-                      : "purchaseOrderId"
-                  ]
-                }
-                onChange={(e) => {
-                  const field =
-                    label === "Billing Date"
-                      ? "billingDate"
-                      : label === "Delivery Date"
-                      ? "deliveryDate"
-                      : label === "Vehicle No"
-                      ? "vehicleNo"
-                      : label === "Driver No"
-                      ? "driverPhoneNo"
-                      : "purchaseOrderId";
-                  setFormDetails((prev) => ({
-                    ...prev,
-                    [field]: e.target.value,
-                  }));
-                }}
-              />
-            </div>
-          ))}
+          <div>
+            <label className="block text-sm font-medium">Billing Date</label>
+            <input
+              type="date"
+              className="w-full px-2 py-1 border rounded text-sm cursor-not-allowed"
+              value={getToday()}
+              disabled
+            />
+          </div>
+
+          {["Delivery Date", "Vehicle No", "Driver No", "Purchase ID"].map(
+            (label, i) => {
+              const fieldMap = {
+                "Delivery Date": "deliveryDate",
+                "Vehicle No": "vehicleNo",
+                "Driver No": "driverPhoneNo",
+                "Purchase ID": "purchaseOrderId",
+              };
+              const field = fieldMap[label];
+              return (
+                <div key={i}>
+                  <label className="block text-sm font-medium">{label}</label>
+                  <input
+                    required
+                    type={label.includes("Date") ? "date" : "text"}
+                    className="w-full px-2 py-1 border rounded text-sm"
+                    value={formDetails[field]}
+                    onChange={(e) =>
+                      setFormDetails((prev) => ({
+                        ...prev,
+                        [field]: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              );
+            }
+          )}
         </div>
       </form>
 
+      {/* Table of Products */}
       <table className="w-full border-collapse mt-6 text-sm table-fixed">
         <thead>
           <tr className="bg-gray-100">

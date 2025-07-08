@@ -1,8 +1,17 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { toWords } from "number-to-words";
 
 const InvoiceModal = ({ product, buyer, onClose }) => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [onClose]);
 
   if (!product || !buyer) return null;
 
@@ -13,26 +22,32 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
       year: "numeric",
     });
 
+  const sumField = (items, key) =>
+    items?.reduce((acc, item) => acc + Number(item[key] || 0), 0);
+
+  const totalGstAmount = sumField(product.items, "gstAmount");
+  const totalAmount = sumField(product.items, "totalAmount");
+  const totalProfit = sumField(product.items, "profit");
+  const total = sumField(product.items, "total");
+
   return (
-    <div className="fixed inset-0 bg-white bg-opacity-60 flex items-center justify-center z-50 overflow-auto">
-      <div
-        className="bg-white p-6 rounded-lg shadow-xl w-[14.8cm] max-w-full relative text-sm mt-80"
-        style={{
-          minHeight: "21cm", // A5 height
-          fontFamily: "Segoe UI, Arial, sans-serif",
-          fontSize: "12px",
-        }}
-      >
+    <div
+      className="fixed inset-0 bg-white bg-opacity-60 flex items-center justify-center z-50 overflow-auto print:static print:bg-transparent print:overflow-visible"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="bg-white p-6 rounded-lg shadow-xl w-[559px] h-[810px] max-w-full relative text-sm my-10 print:w-full print:h-full print:shadow-none print:rounded-none print:m-0 mt-25">
         <button
-          className="absolute top-2 right-4 text-xl font-bold text-red-900"
+          className="absolute top-2 right-4 text-xl font-bold text-red-900 mt-3"
           onClick={onClose}
+          aria-label="Close modal"
         >
           x
         </button>
 
         <h2 className="text-xl font-bold text-center mb-2">Tax Invoice</h2>
 
-        <div className="grid grid-cols-2 gap-4 text-xs border border-black p-4 mb-2">
+        <div className="grid grid-cols-2 gap-4 text-xs border border-black p-4 mb-2 lh-sm">
           <div className="space-y-4">
             <h3 className="font-semibold mb-4">Buyer Details</h3>
             <p>
@@ -50,10 +65,6 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
           </div>
 
           <div className="grid grid-cols-2 gap-2 mt-4">
-            <p>
-              <strong>Quantity</strong>
-            </p>
-            <p>{product.quantity}</p>
             <p>
               <strong>Dated</strong>
             </p>
@@ -89,29 +100,28 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td className="border p-1 text-center">1</td>
-              <td className="border p-1">{product.productName}</td>
-              <td className="border p-1 text-center">{product.hsnCode}</td>
-              <td className="border p-1 text-center">{product.quantity}</td>
-              <td className="border p-1 text-right">
-                ₹{product.purchasePrice}
-              </td>
-              <td className="border p-1 text-right">₹{product.total}</td>
-            </tr>
+            {product.items?.map((item, idx) => (
+              <tr key={idx}>
+                <td className="border p-1 text-center">{idx + 1}</td>
+                <td className="border p-1">{item.productName}</td>
+                <td className="border p-1 text-center">{item.hsnCode}</td>
+                <td className="border p-1 text-center">{item.quantity}</td>
+                <td className="border p-1 text-right">₹{item.purchasePrice}</td>
+                <td className="border p-1 text-right">₹{item.total}</td>
+              </tr>
+            ))}
             <tr>
               <td colSpan="5" className="border p-1 text-right font-semibold">
                 GST
               </td>
-              <td className="border p-1 text-right">₹{product.gstAmount}</td>
+              <td className="border p-1 text-right">₹{totalGstAmount}</td>
             </tr>
-
             <tr>
               <td colSpan="5" className="border p-1 text-right font-bold">
                 Total
               </td>
               <td className="border p-1 text-right font-bold">
-                ₹{product.totalAmount}
+                ₹{totalAmount}
               </td>
             </tr>
             <tr>
@@ -119,7 +129,7 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
                 Profit
               </td>
               <td className="border p-1 text-right font-bold">
-                ₹{product.profit}
+                ₹{totalProfit}
               </td>
             </tr>
           </tbody>
@@ -129,22 +139,22 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
           <table className="w-full text-center">
             <thead className="bg-gray-100">
               <tr>
-                <th className="border p-1">HSN/SAC</th>
                 <th className="border p-1">Taxable Value</th>
-
-                <th className="border p-1"> Tax (Rate)</th>
-                <th className="border p-1"> Tax (Amt)</th>
+                <th className="border p-1">Tax (Rate)</th>
+                <th className="border p-1">Tax (Amt)</th>
                 <th className="border p-1">Total Tax</th>
+                <th className="border p-1">Total Amount</th>
+                <th className="border p-1">Profit</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td className="border p-1">{product.hsnCode}</td>
-                <td className="border p-1">₹{product.total}</td>
-
-                <td className="border p-1">{product.gst}%</td>
-                <td className="border p-1">₹{product.gstAmount}</td>
-                <td className="border p-1">₹{product.gstAmount * 2}</td>
+                <td className="border p-1">₹{total}</td>
+                <td className="border p-1">{product.items[0]?.gst}%</td>
+                <td className="border p-1">₹{totalGstAmount}</td>
+                <td className="border p-1">₹{totalGstAmount * 2}</td>
+                <td className="border p-1">₹{totalAmount}</td>
+                <td className="border p-1">₹{totalProfit}</td>
               </tr>
             </tbody>
           </table>
@@ -153,11 +163,11 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
         <div className="text-xs mb-4">
           <p>
             <strong>Tax Amount (in words):</strong> Indian Rupee{" "}
-            {numberToWords(product.gstAmount * 2)} Only
+            {toWords(Math.round(totalGstAmount * 2)).toUpperCase()} Only
           </p>
           <p>
             <strong>Amount Chargeable (in words):</strong> Indian Rupee{" "}
-            {numberToWords(product.totalAmount)} Only
+            {toWords(Math.round(totalAmount)).toUpperCase()} Only
           </p>
         </div>
 
@@ -170,11 +180,10 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
 
         <p className="text-right text-xs">Authorised Signatory</p>
 
-        {/* ✅ Buttons */}
         <div className="flex justify-end gap-4 mt-6">
           <button
-            onClick={onClose}
-            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 text-sm"
+            onClick={() => navigate(-1)}
+            className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400 text-sm"
           >
             Back
           </button>
@@ -189,18 +198,5 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
     </div>
   );
 };
-
-function numberToWords(amount) {
-  try {
-    const formatter = new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      currencyDisplay: "name",
-    });
-    return formatter.format(amount).replace("Indian rupees", "").trim();
-  } catch {
-    return amount;
-  }
-}
 
 export default InvoiceModal;
