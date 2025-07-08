@@ -10,12 +10,42 @@ export default function SalesDetails() {
   useEffect(() => {
     const fetchSale = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/sales/${id}`);
-        setSale(response.data);
+        const { data: saleData } = await axios.get(
+          `http://localhost:3000/sales/${id}`
+        );  
+
+        const enrichedItems = await Promise.all(
+          saleData.items.map(async (item) => {
+            if (item.purchaseId?._id) {
+              try {
+                const { data: purchaseData } = await axios.get(
+                  `http://localhost:3000/purchase/${item.purchaseId._id}`
+                );
+
+                const matchedItem = purchaseData.items.find(
+                  (pItem) => pItem.productName === item.productName
+                );
+
+                return {
+                  ...item,
+                  purchaseId: matchedItem || {},
+                };
+              } catch (err) {
+                console.error("Error fetching purchase item:", err);
+                return item;
+              }
+            }
+            return item;
+          })
+        );
+
+        saleData.items = enrichedItems;
+        setSale(saleData);
       } catch (error) {
         console.error("Error fetching sales details:", error);
       }
     };
+
     fetchSale();
   }, [id]);
 
@@ -37,23 +67,6 @@ export default function SalesDetails() {
     <>
       <style>
         {`
-          body {
-            background-color: #e5e7eb;
-            font-family: "Segoe UI", Arial, sans-serif;
-            font-size: 12px;
-            color: #000;
-            padding: 20px;
-          }
-
-          h1, h2 {
-            font-size: 16px;
-            font-weight: bold;
-          }
-
-          strong {
-            font-weight: 600;
-          }
-
           @media print {
             @page {
               size: A5 portrait;
@@ -68,21 +81,26 @@ export default function SalesDetails() {
               display: none !important;
             }
           }
+
+          body, .invoice {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          }
         `}
       </style>
 
       <div
         className="invoice mx-auto p-6 border shadow rounded text-gray-800"
         style={{
+          fontSize: "13px",
+          fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
           width: "14.8cm",
           minHeight: "21cm",
           backgroundColor: "white",
         }}
       >
-        <h1 className="text-center mb-4">Tax Invoice</h1>
+        <h1 className="text-center mb-4 text-xl font-bold">Tax Invoice</h1>
 
-        {/* Invoice Info */}
-        <div className="flex flex-col sm:flex-row justify-between border p-4 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between border p-4 mb-6 text-[13px]">
           <div className="space-y-1">
             <div>
               <strong>Order ID:</strong> {sale.orderId}
@@ -105,10 +123,9 @@ export default function SalesDetails() {
           </div>
         </div>
 
-        {/* Seller & Buyer Details */}
-        <div className="flex justify-between border p-4 mb-6">
+        <div className="flex justify-between border p-4 mb-6 text-[13px]">
           <div className="w-1/2 pr-4">
-            <h2 className="mb-2">Seller Details</h2>
+            <h2 className="mb-2 font-semibold">Seller Details</h2>
             <div>
               <strong>Company:</strong> Ematix Embedded and Software Pvt Ltd
             </div>
@@ -121,7 +138,7 @@ export default function SalesDetails() {
             </div>
           </div>
           <div className="w-1/2 pl-4 text-left">
-            <h2 className="mb-2">Buyer Details</h2>
+            <h2 className="mb-2 font-semibold">Buyer Details</h2>
             <div>
               <strong>Name:</strong> {sale.userId?.userName || "N/A"}
             </div>
@@ -137,10 +154,9 @@ export default function SalesDetails() {
           </div>
         </div>
 
-        {/* Product Table */}
         <div className="overflow-x-auto mb-6">
-          <table className="min-w-full border text-sm">
-            <thead className="bg-gray-100">
+          <table className="min-w-full border text-[13px]">
+            <thead className="bg-gray-100 font-semibold">
               <tr className="border-b">
                 <th className="p-2 text-left">Sl No.</th>
                 <th className="p-2 text-left">Description of Goods</th>
@@ -173,8 +189,7 @@ export default function SalesDetails() {
           </table>
         </div>
 
-        {/* Tax Summary */}
-        <div className="border p-4 mb-6">
+        <div className="border p-4 mb-6 text-[13px]">
           <div className="flex justify-between mb-2">
             <div>Taxable Value:</div>
             <div>₹{calculateTotalAmount().toFixed(2)}</div>
@@ -189,8 +204,7 @@ export default function SalesDetails() {
           </div>
         </div>
 
-        {/* Amount in Words */}
-        <div className="italic mb-6">
+        <div className="italic mb-6 text-[13px]">
           Amount Chargeable (in words):{" "}
           <strong>Rupees {numberToWords(grandTotal)} Only</strong>
         </div>
@@ -231,17 +245,43 @@ function numberToWords(amount) {
     "Seven",
     "Eight",
     "Nine",
+    "Ten",
+    "Eleven",
+    "Twelve",
+    "Thirteen",
+    "Fourteen",
+    "Fifteen",
+    "Sixteen",
+    "Seventeen",
+    "Eighteen",
+    "Nineteen",
   ];
-  const num = parseInt(amount);
-  if (num < 10) return words[num];
-  if (num < 20) return words[num - 10] + "teen";
-  if (num < 100)
-    return (words[Math.floor(num / 10)] + "ty " + words[num % 10]).trim();
-  if (num < 1000)
-    return (
-      words[Math.floor(num / 100)] +
-      " Hundred " +
-      numberToWords(num % 100)
-    ).trim();
-  return num.toString();
+  const tens = [
+    "",
+    "",
+    "Twenty",
+    "Thirty",
+    "Forty",
+    "Fifty",
+    "Sixty",
+    "Seventy",
+    "Eighty",
+    "Ninety",
+  ];
+
+  const numToWords = (n) => {
+    if (n < 20) return words[n];
+    if (n < 100) return ` ${tens[Math.floor(n / 10)]} ${words[n % 10]}`.trim();
+    if (n < 1000)
+      return `${words[Math.floor(n / 100)]} Hundred ${numToWords(
+        n % 100
+      )}`.trim();
+    if (n < 100000)
+      return `${numToWords(Math.floor(n / 1000))} Thousand ${numToWords(
+        n % 1000
+      )}`.trim();
+    return n.toString();
+  };
+
+  return numToWords(Math.floor(amount));
 }

@@ -36,7 +36,7 @@ const InvoiceModal = ({ product, buyer, onClose }) => {
       role="dialog"
       aria-modal="true"
     >
-      <div className="bg-white p-6 rounded-lg shadow-xl w-[559px] h-[810px] max-w-full relative text-sm my-10 print:w-full print:h-full print:shadow-none print:rounded-none print:m-0 mt-25">
+      <div className="bg-white p-6 mt-60 rounded-lg shadow-xl w-[559px] h-[810px] max-w-full relative text-sm my-10 print:w-full print:h-full print:shadow-none print:rounded-none print:m-0 mt-25">
         <button
           className="absolute top-2 right-4 text-xl font-bold text-red-900 mt-3"
           onClick={onClose}

@@ -1,46 +1,14 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React from "react";
 
 export default function InvoicePage({ sale }) {
-  const [purchases, setPurchases] = useState([]);
-  const [loadingPurchases, setLoadingPurchases] = useState(true);
-
-  useEffect(() => {
-    const fetchPurchases = async () => {
-      try {
-        if (sale?.items?.length) {
-          const fetched = await Promise.all(
-            sale.items.map((item) =>
-              axios
-                .get(`http://localhost:3000/purchase/${item.purchaseId?._id}`)
-                .then((res) => res.data)
-                .catch((err) => {
-                  console.error("Error fetching purchase:", err);
-                  return null;
-                })
-            )
-          );
-          setPurchases(fetched);
-        }
-      } catch (error) {
-        console.error("Error fetching purchases:", error);
-      } finally {
-        setLoadingPurchases(false);
-      }
-    };
-
-    fetchPurchases();
-  }, [sale]);
+  console.log(sale, "Invoice Page");
 
   if (!sale) return <div className="text-center py-10">Loading invoice...</div>;
-  if (loadingPurchases)
-    return <div className="text-center py-10">Loading purchase details...</div>;
 
   const calculateTotalAmount = () =>
     sale.items?.reduce((sum, item) => {
-      const purchase = purchases.find((p) => p?._id === item.purchaseId?._id);
-      const rate = purchase?.sellingPrice || 0;
-      return sum + (item.quantity || 0) * rate;
+      const { sellingPrice = 0 } = item.purchaseId || {};
+      return sum + (item.quantity || 0) * sellingPrice;
     }, 0) || 0;
 
   const calculateTotalGST = () =>
@@ -131,21 +99,19 @@ export default function InvoicePage({ sale }) {
         </thead>
         <tbody>
           {sale.items?.map((item, idx) => {
-            const purchase = purchases.find(
-              (p) => p?._id === item.purchaseId?._id
-            );
-            const hsn = purchase?.hsnCode || "N/A";
-            const rate = purchase?.sellingPrice || 0;
+            const { hsnCode = "N/A", sellingPrice = 0 } = item.purchaseId || {};
             const qty = item.quantity || 0;
-            const amount = qty * rate;
+            const amount = qty * sellingPrice;
 
             return (
               <tr key={idx}>
                 <td className="border p-2">{idx + 1}</td>
                 <td className="border p-2">{item.productName || "N/A"}</td>
-                <td className="border p-2">{hsn}</td>
+                <td className="border p-2">{hsnCode}</td>
                 <td className="border p-2 text-right">{qty}</td>
-                <td className="border p-2 text-right">₹{rate.toFixed(2)}</td>
+                <td className="border p-2 text-right">
+                  ₹{sellingPrice.toFixed(2)}
+                </td>
                 <td className="border p-2 text-right">₹{amount.toFixed(2)}</td>
               </tr>
             );
@@ -173,7 +139,7 @@ export default function InvoicePage({ sale }) {
       </div>
 
       <p className="text-xs text-gray-600 italic mt-4">
-        Amount Chargeable (in words): Rupees One Hundred Eight Only
+        Amount Chargeable (in words): Rupees {grandTotal.toFixed(0)} Only
       </p>
     </div>
   );

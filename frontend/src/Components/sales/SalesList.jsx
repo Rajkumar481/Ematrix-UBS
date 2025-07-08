@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import EditSaleModal from "./EditSales";
 
 export default function SalesList() {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ export default function SalesList() {
   useEffect(() => {
     fetchSales();
   }, []);
+
   useEffect(() => {
     applyFilters();
   }, [searchProduct, searchCompany, startDate, endDate, salesData]);
@@ -58,32 +60,59 @@ export default function SalesList() {
     setFilteredData(filtered);
   };
 
-  const handleEdit = (id) => {
+  const handleEdit = async (id) => {
     const sale = salesData.find((item) => item._id === id);
-    if (sale) {
-      setEditingSale({
-        ...sale,
-        billingDate: sale.billingDate,
-        deliveryDate: sale.deliveryDate,
-      });
-      setIsModalOpen(true);
-    }
+    if (!sale) return;
+
+    const enrichedItems = await Promise.all(
+      sale.items.map(async (item) => {
+        if (!item.purchaseId?._id) return item;
+        try {
+          const res = await axios.get(
+            `http://localhost:3000/purchase/${item.purchaseId._id}`
+          );
+          return {
+            ...item,
+            purchaseId: res.data,
+          };
+        } catch (err) {
+          console.error("Failed to fetch purchase detail", err);
+          return item;
+        }
+      })
+    );
+
+    setEditingSale({ ...sale, items: enrichedItems });
+    setIsModalOpen(true);
   };
 
-  const handleModalSave = async () => {
+  const handleModalSave = async (updatedSale) => {
     try {
-      const updatedSale = {
-        billingDate: editingSale.billingDate,
-        deliveryDate: editingSale.deliveryDate,
+      const {
+        _id,
+        billingDate,
+        deliveryDate,
+        dueDate,
+        modeOfPayment,
+        orderId,
+        items,
+        userId,
+      } = updatedSale;
+      const payload = {
+        billingDate,
+        deliveryDate,
+        dueDate,
+        modeOfPayment,
+        orderId,
+        items,
+        userId: userId?._id || userId,
       };
       const response = await axios.patch(
-        `http://localhost:3000/sales/${editingSale._id}`,
-        updatedSale
+        `http://localhost:3000/sales/${_id}`,
+        payload
       );
       setSalesData((prev) =>
-        prev.map((item) =>
-          item._id === editingSale._id ? response.data : item
-        )
+        prev.map((sale) => (sale._id === _id ? response.data : sale))
       );
       setIsModalOpen(false);
     } catch (error) {
@@ -102,18 +131,10 @@ export default function SalesList() {
     }
   };
 
-  const handlePurchaseClick = async (purchaseId) => {
-    try {
-      const response = await axios.get(
-        `http://localhost:3000/purchase/${purchaseId}`
-      );
-      console.log("Purchase details:", response.data);
-      alert(`Purchase details fetched! Check console.`);
-    } catch (error) {
-      console.error("Error fetching purchase details:", error);
-      alert("Failed to fetch purchase details. Please try again.");
-    }
-  };
+  const grandTotal = filteredData.reduce(
+    (sum, item) => sum + Number(item.grandTotal || 0),
+    0
+  );
 
   return (
     <div className="w-full max-w-6xl mx-auto p-6">
@@ -123,41 +144,39 @@ export default function SalesList() {
 
       <div className="bg-white p-4 rounded-lg shadow mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
-          <label className="text-sm text-gray-700">Product Name</label>
+          <label>Product Name</label>
           <input
             type="text"
             value={searchProduct}
             onChange={(e) => setSearchProduct(e.target.value)}
-            className="mt-1 w-full border-gray-300 rounded-md shadow-sm"
-            placeholder="Search by product"
+            className="mt-1 w-full border-gray-300 rounded-md"
           />
         </div>
         <div>
-          <label className="text-sm text-gray-700">Company Name</label>
+          <label>Company Name</label>
           <input
             type="text"
             value={searchCompany}
             onChange={(e) => setSearchCompany(e.target.value)}
-            className="mt-1 w-full border-gray-300 rounded-md shadow-sm"
-            placeholder="Search by company"
+            className="mt-1 w-full border-gray-300 rounded-md"
           />
         </div>
         <div>
-          <label className="text-sm text-gray-700">Start Date</label>
+          <label>Start Date</label>
           <input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="mt-1 w-full border-gray-300 rounded-md shadow-sm"
+            className="mt-1 w-full border-gray-300 rounded-md"
           />
         </div>
         <div>
-          <label className="text-sm text-gray-700">End Date</label>
+          <label>End Date</label>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="mt-1 w-full border-gray-300 rounded-md shadow-sm"
+            className="mt-1 w-full border-gray-300 rounded-md"
           />
         </div>
       </div>
@@ -166,173 +185,78 @@ export default function SalesList() {
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                S.No
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Product Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Company Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Quantity
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Grand Total
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Purchase ID
-              </th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
+              <th className="px-4 py-3">S.No</th>
+              <th className="px-4 py-3">Product Name</th>
+              <th className="px-4 py-3">Company</th>
+              <th className="px-4 py-3">Quantity</th>
+              <th className="px-4 py-3">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredData.map((item, index) => {
-              const { _id, items, userId, grandTotal } = item;
-              const totalQuantity = items?.reduce(
-                (sum, i) => sum + i.quantity,
-                0
-              );
-
+          <tbody>
+            {filteredData.map((item, idx) => {
+              const qty = item.items?.reduce((s, i) => s + i.quantity, 0);
               return (
                 <tr
-                  key={_id}
-                  className="hover:bg-gray-50 transition-colors duration-200"
-                  onClick={() => navigate(`/sales/${_id}`)}
+                  key={item._id}
+                  onClick={() => navigate(`/sales/${item._id}`)}
+                  className="hover:bg-gray-50 cursor-pointer"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {index + 1}
+                  <td className="px-4 py-2">{idx + 1}</td>
+                  <td className="px-4 py-2">
+                    {item.items?.map((i) => i.productName).join(", ")}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {items?.map((i) => i.productName).join(", ") || "N/A"}
+                  <td className="px-4 py-2">
+                    {item.userId?.userName || "N/A"}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {userId?.userName || "N/A"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {totalQuantity || 0}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700">
-                    {grandTotal}
-                  </td>
-                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 underline cursor-pointer">
-                    {items?.map((i) => (
-                      <div
-                        key={i.purchaseId?._id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePurchaseClick(i.purchaseId?._id);
-                        }}
-                      >
-                        {i.purchaseId?._id || "N/A"}
-                      </div>
-                    ))}
-                  </td> */}
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <div className="flex items-center justify-center gap-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(_id);
-                        }}
-                        className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 p-2 rounded-full transition-all duration-200"
-                        title="Edit"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(_id);
-                        }}
-                        className="text-red-600 hover:text-red-800 hover:bg-red-100 p-2 rounded-full transition-all duration-200"
-                        title="Delete"
-                      >
-                        🗑️
-                      </button>
-                    </div>
+                  <td className="px-4 py-2">{qty || 0}</td>
+                  <td className="px-4 py-2 text-center">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(item._id);
+                      }}
+                      className="mr-2"
+                    >
+                      ✏
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(item._id);
+                      }}
+                    >
+                      🗑
+                    </button>
                   </td>
                 </tr>
               );
             })}
           </tbody>
+          <tfoot className="bg-gray-100">
+            <tr>
+              <td colSpan="4" className="text-right font-bold px-4 py-2">
+                Grand Total
+              </td>
+              <td className="text-green-600 font-semibold px-4 py-2">
+                ₹{grandTotal.toFixed(2)}
+              </td>
+            </tr>
+          </tfoot>
         </table>
       </div>
 
-      {loading && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">Loading sales data...</p>
-        </div>
-      )}
+      {loading && <div className="text-center mt-6">Loading sales data...</div>}
       {!loading && filteredData.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">No sales data available</p>
-        </div>
+        <div className="text-center mt-6">No sales data available</div>
       )}
 
       {isModalOpen && editingSale && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg relative">
-            <button
-              className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
-              onClick={() => setIsModalOpen(false)}
-            >
-              &times;
-            </button>
-            <h2 className="text-xl font-bold mb-4">Edit Sale</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Billing Date
-                </label>
-                <input
-                  type="date"
-                  value={editingSale.billingDate}
-                  onChange={(e) =>
-                    setEditingSale({
-                      ...editingSale,
-                      billingDate: e.target.value,
-                    })
-                  }
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Delivery Date
-                </label>
-                <input
-                  type="date"
-                  value={editingSale.deliveryDate}
-                  onChange={(e) =>
-                    setEditingSale({
-                      ...editingSale,
-                      deliveryDate: e.target.value,
-                    })
-                  }
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleModalSave}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              >
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
+        <EditSaleModal
+          open={isModalOpen}
+          sale={editingSale}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleModalSave}
+        />
       )}
     </div>
   );

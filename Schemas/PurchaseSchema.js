@@ -34,7 +34,6 @@ const PurchaseSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-
     items: [
       {
         productName: {
@@ -49,11 +48,11 @@ const PurchaseSchema = new mongoose.Schema(
           type: Number,
           required: true,
         },
-        purchasePrice: {
+        sellingPrice: {
           type: Number,
           required: true,
         },
-        sellingPrice: {
+        purchasePrice: {
           type: Number,
           required: true,
         },
@@ -73,6 +72,10 @@ const PurchaseSchema = new mongoose.Schema(
         profit: {
           type: Number,
         },
+        salesQuantity: {
+          type: Number,
+          default: 0,
+        },
       },
     ],
   },
@@ -91,12 +94,19 @@ PurchaseSchema.pre("save", function (next) {
     const totalAmount = total + gstAmount;
     const profit = (sellingPrice - purchasePrice) * quantity;
 
+    // ✅ Set salesQuantity only if this is a new document
+    const salesQuantity =
+      this.isNew || typeof item.salesQuantity === "undefined"
+        ? quantity
+        : item.salesQuantity;
+
     return {
       ...item,
       total: parseFloat(total.toFixed(2)),
       gstAmount: parseFloat(gstAmount.toFixed(2)),
       totalAmount: parseFloat(totalAmount.toFixed(2)),
       profit: parseFloat(profit.toFixed(2)),
+      salesQuantity,
     };
   });
 
